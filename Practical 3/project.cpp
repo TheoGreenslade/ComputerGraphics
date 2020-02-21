@@ -28,6 +28,9 @@ vector<Colour> readMaterials(string filename);
 void update();
 void draw(bool boool);
 void handleEvent(SDL_Event event);
+char ***malloc3dArray(int dim1, int dim2, int dim3);
+void drawTextureTriangleFlatBottom(CanvasTriangle triangle, string filename);
+void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
@@ -127,7 +130,7 @@ vector<Colour> readMaterials(string filename){
     char endLine[256];
     ifs.getline(endLine,256);
   }
-return materials;
+  return materials;
 }
 
 vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials){
@@ -393,7 +396,7 @@ void displayPPMImage(string filename){
 }
 
 void drawTextureTriangle(CanvasTriangle triangle, string filename){
-  drawStrokedTri(triangle);
+  drawStrokedTriangle(triangle);
 
   if (triangle.vertices[0].y > triangle.vertices[1].y){
     swap(triangle.vertices[0],triangle.vertices[1]);
@@ -433,12 +436,12 @@ void drawTextureTriangleFlatBottom(CanvasTriangle triangle, string filename){
 
   int numRows = triangle.vertices[2].y - triangle.vertices[0].y;
 
-  float* edgeXScale1 = interpolate(triangle.vertices[0].x,triangle.vertices[1].x,numRows);
-  float* textureEdgeXScale1 = interpolate(triangle.vertices[0].texturePoint.x,triangle.vertices[1].texturePoint.x,numRows);
-  float* textureEdgeYScale1 = interpolate(triangle.vertices[0].texturePoint.y,triangle.vertices[1].texturePoint.y,numRows);
-  float* edgeXScale2 = interpolate(triangle.vertices[0].x,triangle.vertices[2].x,numRows);
-  float* textureEdgeXScale2 = interpolate(triangle.vertices[0].texturePoint.x,triangle.vertices[2].texturePoint.x,numRows);
-  float* textureEdgeYScale2 = interpolate(triangle.vertices[0].texturePoint.y,triangle.vertices[2].texturePoint.y,numRows);
+  vector<float> edgeXScale1 = interpolate(triangle.vertices[0].x,triangle.vertices[1].x,numRows);
+  vector<float> textureEdgeXScale1 = interpolate(triangle.vertices[0].texturePoint.x,triangle.vertices[1].texturePoint.x,numRows);
+  vector<float> textureEdgeYScale1 = interpolate(triangle.vertices[0].texturePoint.y,triangle.vertices[1].texturePoint.y,numRows);
+  vector<float> edgeXScale2 = interpolate(triangle.vertices[0].x,triangle.vertices[2].x,numRows);
+  vector<float> textureEdgeXScale2 = interpolate(triangle.vertices[0].texturePoint.x,triangle.vertices[2].texturePoint.x,numRows);
+  vector<float> textureEdgeYScale2 = interpolate(triangle.vertices[0].texturePoint.y,triangle.vertices[2].texturePoint.y,numRows);
 
   for (int i = 0; i < numRows; i++){
     int numPixelsInRow = edgeXScale2[i] - edgeXScale1[i];
@@ -450,8 +453,8 @@ void drawTextureTriangleFlatBottom(CanvasTriangle triangle, string filename){
       uint32_t pixel_colour = (255<<24) + (red<<16) + (green<<8) + blue;
       window.setPixelColour(triangle.vertices[0].x, triangle.vertices[0].y, pixel_colour);
     } else {
-    float* xScaleTexture = interpolate(textureEdgeXScale1[i],textureEdgeXScale2[i],numPixelsInRow);
-    float* yScaleTexture = interpolate(textureEdgeYScale1[i],textureEdgeYScale2[i],numPixelsInRow);
+    vector<float> xScaleTexture = interpolate(textureEdgeXScale1[i],textureEdgeXScale2[i],numPixelsInRow);
+    vector<float> yScaleTexture = interpolate(textureEdgeYScale1[i],textureEdgeYScale2[i],numPixelsInRow);
 
       for (int j = 0; j < numPixelsInRow; j++){
         int red = int(image[int(xScaleTexture[j])][int(yScaleTexture[j])][0]);
@@ -470,12 +473,12 @@ void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename){
 
   int numRows = triangle.vertices[2].y - triangle.vertices[0].y;
 
-  float* edgeXScale1 = interpolate(triangle.vertices[0].x,triangle.vertices[2].x,numRows);
-  float* textureEdgeXScale1 = interpolate(triangle.vertices[0].texturePoint.x,triangle.vertices[2].texturePoint.x,numRows);
-  float* textureEdgeYScale1 = interpolate(triangle.vertices[0].texturePoint.y,triangle.vertices[2].texturePoint.y,numRows);
-  float* edgeXScale2 = interpolate(triangle.vertices[1].x+1,triangle.vertices[2].x+1,numRows);
-  float* textureEdgeXScale2 = interpolate(triangle.vertices[1].texturePoint.x,triangle.vertices[2].texturePoint.x,numRows);
-  float* textureEdgeYScale2 = interpolate(triangle.vertices[1].texturePoint.y,triangle.vertices[2].texturePoint.y,numRows);
+  vector<float> edgeXScale1 = interpolate(triangle.vertices[0].x,triangle.vertices[2].x,numRows);
+  vector<float> textureEdgeXScale1 = interpolate(triangle.vertices[0].texturePoint.x,triangle.vertices[2].texturePoint.x,numRows);
+  vector<float> textureEdgeYScale1 = interpolate(triangle.vertices[0].texturePoint.y,triangle.vertices[2].texturePoint.y,numRows);
+  vector<float> edgeXScale2 = interpolate(triangle.vertices[1].x+1,triangle.vertices[2].x+1,numRows);
+  vector<float> textureEdgeXScale2 = interpolate(triangle.vertices[1].texturePoint.x,triangle.vertices[2].texturePoint.x,numRows);
+  vector<float> textureEdgeYScale2 = interpolate(triangle.vertices[1].texturePoint.y,triangle.vertices[2].texturePoint.y,numRows);
 
   for (int i = 0; i < numRows; i++){
     int numPixelsInRow = edgeXScale2[i] - edgeXScale1[i];
@@ -487,8 +490,8 @@ void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename){
       uint32_t pixel_colour = (255<<24) + (red<<16) + (green<<8) + blue;
       window.setPixelColour(triangle.vertices[2].x, triangle.vertices[2].y, pixel_colour);
     } else {
-    float* xScaleTexture = interpolate(textureEdgeXScale1[i],textureEdgeXScale2[i],numPixelsInRow);
-    float* yScaleTexture = interpolate(textureEdgeYScale1[i],textureEdgeYScale2[i],numPixelsInRow);
+    vector<float> xScaleTexture = interpolate(textureEdgeXScale1[i],textureEdgeXScale2[i],numPixelsInRow);
+    vector<float> yScaleTexture = interpolate(textureEdgeYScale1[i],textureEdgeYScale2[i],numPixelsInRow);
 
       for (int j = 0; j < numPixelsInRow; j++){
         int red = int(image[int(xScaleTexture[j])][int(yScaleTexture[j])][0]);

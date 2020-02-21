@@ -28,38 +28,34 @@ char*** readPPMImagePayload(ifstream ifs,int width,int height);
 char ***malloc3dArray(int dim1, int dim2, int dim3);
 float* interpolate(float start, float end, int steps);
 void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename);
+vector<Colour> readMaterials(string filename);
+vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
 int main(int argc, char* argv[])
 {
+  bool boool = true;
   SDL_Event event;
+
   while(true)
   {
-    // We MUST poll for events - otherwise the window will freeze !
     if(window.pollForInputEvents(&event)) handleEvent(event);
-    // update();
-    // draw();
-
-    //TASK 5
-    CanvasPoint point1 = CanvasPoint(160,10);
-    CanvasPoint point2 = CanvasPoint(300,230);
-    CanvasPoint point3 = CanvasPoint(10,150);
-    Colour colour = Colour(255,255,255);
-
-    TexturePoint point4 = TexturePoint(195,5);
-    TexturePoint point5 = TexturePoint(395,380);
-    TexturePoint point6 = TexturePoint(65,330);
-    point1.texturePoint = point4;
-    point2.texturePoint = point5;
-    point3.texturePoint = point6;
-    CanvasTriangle triangle = CanvasTriangle(point1,point2,point3,colour);
-    
-    drawTextureTriangle(triangle, "texture.ppm");
-
-    // Need to render the frame at the end, or nothing actually gets shown on the screen !
+    //update();
+    vector<Colour> materials = readMaterials("cornell-box/cornell-box.mtl");
+    vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials);
+    if (boool == true){
+      for(int i = 0; i < 8; i++){
+        cout << triangles[i] << endl;
+      }
+    }
+    //draw(boool);
     window.renderFrame();
+    boool = false;
   }
+
+  // Need to render the frame at the end, or nothing actually gets shown on the screen !
+  // window.renderFrame();
 }
 
 void draw()
@@ -401,4 +397,123 @@ float* interpolate(float start, float end, int steps){
     result[i] = start + (step*i);
   }
   return result;
+}
+
+vector<Colour> readMaterials(string filename){
+
+  std::ifstream ifs;
+  ifs.open (filename, ifstream::in);
+  assert (!ifs.fail( ));
+
+  vector<Colour> materials;
+
+  while(!ifs.eof( )){
+    Colour newColour;
+    char colourName[256];
+    ifs.getline(colourName,256);
+    string colourNameString(colourName);
+    newColour.name = colourNameString.substr(7);
+
+    string kd;
+    char colour[256];
+    ifs.getline(colour,256);
+    string colourString(colour);
+    size_t found = colourString.find(" ");
+    kd = colourString.substr(0,found);
+
+    colourString = colourString.substr(found + 1);
+    found = colourString.find(" ");
+    newColour.red = round(255*stof(colourString.substr(0,found)));
+
+    colourString = colourString.substr(found + 1);
+    found = colourString.find(" ");
+    newColour.green = round(255*stof(colourString.substr(0,found)));
+
+    colourString = colourString.substr(found + 1);
+    found = colourString.find(" ");
+    newColour.blue = round(255*stof(colourString.substr(0,found)));
+
+    materials.push_back(newColour);
+
+    char endLine[256];
+    ifs.getline(endLine,256);
+  }
+  return materials;
+}
+
+vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials){
+
+  std::ifstream ifs;
+  ifs.open (filename, ifstream::in);
+  assert (!ifs.fail( ));
+  char endLine[256];
+  ifs.getline(endLine,256);
+  ifs.getline(endLine,256);
+
+  vector<ModelTriangle> ModelTriangles;
+
+  vector<vec3> points;
+  while(!ifs.eof( )){
+    ModelTriangle newTriangle;
+    char triangleName[256];
+    ifs.getline(triangleName,256);
+    string triangleNameString(triangleName);
+    //newTriangle.name = triangleNameString.substr(1);
+
+    char material[256];
+    ifs.getline(material,256);
+    string colourString(material);
+    size_t found = colourString.find(" ");
+    string newMaterial = colourString.substr(found + 1);
+    for(int i = 0; i < materials.size(); i ++){
+      if(newMaterial == materials[i].name){
+        newTriangle.colour = materials[i];
+      }
+    }
+
+    char point[256];
+    ifs.getline(point,256);
+    while(point[0] == 'v'){
+      vec3 newPoint;
+      string pointString(point);
+      pointString = pointString.substr(2);
+
+      found = pointString.find(" ");
+      newPoint.x = stof(pointString.substr(0,found));
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newPoint.y = stof(pointString.substr(0,found));
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newPoint.z = stof(pointString.substr(0,found));
+
+      points.push_back(newPoint);
+      ifs.getline(point,256);
+    }
+
+    while(point[0] == 'f'){
+
+      string faceString(point);
+      faceString = faceString.substr(2);
+      found = faceString.find("/");
+      int index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[0] = points[index - 1];
+
+      faceString = faceString.substr(found + 2);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[1] = points[index - 1];
+
+      faceString = faceString.substr(found + 2);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[2] = points[index - 1];
+
+      ifs.getline(point,256);
+    }
+    ModelTriangles.push_back(newTriangle);
+  }
+  return ModelTriangles;
 }
