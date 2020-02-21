@@ -30,6 +30,8 @@ float* interpolate(float start, float end, int steps);
 void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename);
 vector<Colour> readMaterials(string filename);
 vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials);
+CanvasTriangle projectTriangleOnImagePlane(ModelTriangle modelTriangle, vec3 cameraPosition, mat4x4 cameraTransform);
+CanvasPoint projectPointOnImagePlane(vec3 point, vec3 cameraPosition, mat4x4 cameraTransform);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
@@ -44,10 +46,14 @@ int main(int argc, char* argv[])
     //update();
     vector<Colour> materials = readMaterials("cornell-box/cornell-box.mtl");
     vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials);
-    if (boool == true){
-      for(int i = 0; i < 8; i++){
-        cout << triangles[i] << endl;
-      }
+
+
+    vec3 cameraPosition = vec3(0,0,10000000);
+    mat4x4 cameraTransform = mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,20,0);
+
+    for(int i = 0; i < triangles.size(); i++){
+      CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraTransform);
+      drawFilledTri(temp);
     }
     //draw(boool);
     window.renderFrame();
@@ -516,4 +522,25 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials){
     ModelTriangles.push_back(newTriangle);
   }
   return ModelTriangles;
+}
+
+CanvasTriangle projectTriangleOnImagePlane(ModelTriangle modelTriangle, vec3 cameraPosition, mat4x4 cameraTransform){
+  CanvasPoint x = projectPointOnImagePlane(modelTriangle.vertices[0], cameraPosition, cameraTransform);
+  CanvasPoint y = projectPointOnImagePlane(modelTriangle.vertices[1], cameraPosition, cameraTransform);
+  CanvasPoint z = projectPointOnImagePlane(modelTriangle.vertices[2], cameraPosition, cameraTransform);
+
+  CanvasTriangle result = CanvasTriangle(x,y,z,modelTriangle.colour);
+  return result;
+}
+
+CanvasPoint projectPointOnImagePlane(vec3 point, vec3 cameraPosition, mat4x4 cameraTransform){
+  // vec3 imagePlane = cameraPosition - vec3(0,0,5);
+  float bigZ = cameraPosition[2]-point[2];
+  float smallZ = cameraPosition[2];
+  float bigX = point[0];
+  float bigY = point[1];
+  float littleX = ((smallZ/bigZ)*bigX)*10;
+  float littleY = ((smallZ/bigZ)*bigY)*10;
+  CanvasPoint result = CanvasPoint(littleX + WIDTH/2,-littleY + HEIGHT/2);
+  return result;
 }
