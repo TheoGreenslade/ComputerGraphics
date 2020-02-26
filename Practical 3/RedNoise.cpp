@@ -29,11 +29,12 @@ char ***malloc3dArray(int dim1, int dim2, int dim3);
 float* interpolate(float start, float end, int steps);
 void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename);
 vector<Colour> readMaterials(string filename);
-vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials);
+vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, float scalingFactor);
 CanvasTriangle projectTriangleOnImagePlane(ModelTriangle modelTriangle, vec3 cameraPosition, mat4x4 cameraTransform);
 CanvasPoint projectPointOnImagePlane(vec3 point, vec3 cameraPosition, mat4x4 cameraTransform);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
+float distanceOfImagePlaneFromCamera = 5;
 
 int main(int argc, char* argv[])
 {
@@ -45,15 +46,16 @@ int main(int argc, char* argv[])
     if(window.pollForInputEvents(&event)) handleEvent(event);
     //update();
     vector<Colour> materials = readMaterials("cornell-box/cornell-box.mtl");
-    vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials);
+    vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
 
 
-    vec3 cameraPosition = vec3(0,0,10000000);
+    vec3 cameraPosition = vec3(0,2,10);
     mat4x4 cameraTransform = mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,20,0);
 
     for(int i = 0; i < triangles.size(); i++){
       CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraTransform);
-      drawFilledTri(temp);
+//      drawFilledTri(temp);
+      drawStrokedTri(temp);
     }
     //draw(boool);
     window.renderFrame();
@@ -447,7 +449,7 @@ vector<Colour> readMaterials(string filename){
   return materials;
 }
 
-vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials){
+vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, float  scalingFactor){
 
   std::ifstream ifs;
   ifs.open (filename, ifstream::in);
@@ -476,6 +478,7 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials){
         newTriangle.colour = materials[i];
       }
     }
+    // cout << newTriangle.colour << newl;
 
     char point[256];
     ifs.getline(point,256);
@@ -535,12 +538,13 @@ CanvasTriangle projectTriangleOnImagePlane(ModelTriangle modelTriangle, vec3 cam
 
 CanvasPoint projectPointOnImagePlane(vec3 point, vec3 cameraPosition, mat4x4 cameraTransform){
   // vec3 imagePlane = cameraPosition - vec3(0,0,5);
-  float bigZ = cameraPosition[2]-point[2];
-  float smallZ = cameraPosition[2];
-  float bigX = point[0];
-  float bigY = point[1];
-  float littleX = ((smallZ/bigZ)*bigX)*10;
-  float littleY = ((smallZ/bigZ)*bigY)*10;
+  float bigZ = point.z - cameraPosition.z;
+  float smallZ = distanceOfImagePlaneFromCamera;
+  float bigX = point.x - cameraPosition.x;
+  float bigY = point.y - cameraPosition.y;
+  float proportion = smallZ/bigZ;
+  float littleX = bigX * proportion * 40.0;
+  float littleY = bigY * proportion * 40.0;
   CanvasPoint result = CanvasPoint(littleX + WIDTH/2,-littleY + HEIGHT/2);
   return result;
 }
