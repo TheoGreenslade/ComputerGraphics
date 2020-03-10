@@ -9,17 +9,22 @@
 using namespace std;
 using namespace glm;
 
-#define WIDTH 320
-#define HEIGHT 240
+#define WIDTH 600
+#define HEIGHT 600
 
 void draw();
 void update();
 void handleEvent(SDL_Event event);
-void drawline(CanvasPoint start, CanvasPoint end, Colour colour);
+void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawStrokedTri(CanvasTriangle triangle);
 void randomStrokedTri();
 void drawFilledTri(CanvasTriangle triangle);
 void drawFilledTriFlat(CanvasTriangle triangle, int tri);
+
+void drawFilledTopTri(vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour);
+void drawFilledBottomTri(vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour);
+
+float findIntersect(CanvasPoint from, CanvasPoint to, float yIntercept);
 void randomFilledTri();
 void displayPPMImage(string filename);
 void drawTextureTriangle(CanvasTriangle triangle, string filename);
@@ -38,9 +43,7 @@ float distanceOfImagePlaneFromCamera = 5;
 
 int main(int argc, char* argv[])
 {
-  bool boool = true;
   SDL_Event event;
-
   while(true)
   {
     if(window.pollForInputEvents(&event)) handleEvent(event);
@@ -49,23 +52,24 @@ int main(int argc, char* argv[])
     vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
 
 
-    vec3 cameraPosition = vec3(0,2,10);
+    vec3 cameraPosition = vec3(0,2,3);
     mat4x4 cameraTransform = mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,20,0);
 
+// triangles.size()
     for(int i = 0; i < triangles.size(); i++){
       CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraTransform);
-//      drawFilledTri(temp);
-      drawStrokedTri(temp);
+      //drawStrokedTri(temp);
+      drawFilledTri(temp);
     }
     //draw(boool);
     window.renderFrame();
-    boool = false;
   }
 
   // Need to render the frame at the end, or nothing actually gets shown on the screen !
   // window.renderFrame();
 }
 
+// RedNoise original
 void draw()
 {
   window.clearPixels();
@@ -92,8 +96,8 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_RIGHT) cout << "RIGHT" << endl;
     else if(event.key.keysym.sym == SDLK_UP) cout << "UP" << endl;
     else if(event.key.keysym.sym == SDLK_DOWN) cout << "DOWN" << endl;
-    else if(event.key.keysym.sym == SDLK_u) randomStrokedTri();
-    else if(event.key.keysym.sym == SDLK_f)randomFilledTri();
+    // else if(event.key.keysym.sym == SDLK_u) randomStrokedTri();
+    // else if(event.key.keysym.sym == SDLK_f)randomFilledTri();
   }
   else if(event.type == SDL_MOUSEBUTTONDOWN){
    cout << "MOUSE CLICKED: x:" << event.button.x << " y:" << event.button.y << endl;
@@ -102,7 +106,7 @@ void handleEvent(SDL_Event event)
   }
 }
 
-void drawline(CanvasPoint start, CanvasPoint end, Colour colour){
+void drawLine(CanvasPoint start, CanvasPoint end, Colour colour){
   float xDiff = end.x - start.x;
   float yDiff = end.y - start.y;
   float numberOfSteps = std::max(abs(xDiff),abs(yDiff));
@@ -119,9 +123,9 @@ void drawline(CanvasPoint start, CanvasPoint end, Colour colour){
 }
 
 void drawStrokedTri(CanvasTriangle triangle){
-  drawline(triangle.vertices[0],triangle.vertices[1],triangle.colour);
-  drawline(triangle.vertices[0],triangle.vertices[2],triangle.colour);
-  drawline(triangle.vertices[1],triangle.vertices[2],triangle.colour);
+  drawLine(triangle.vertices[0],triangle.vertices[1],triangle.colour);
+  drawLine(triangle.vertices[0],triangle.vertices[2],triangle.colour);
+  drawLine(triangle.vertices[1],triangle.vertices[2],triangle.colour);
 }
 
 void randomStrokedTri(){
@@ -133,76 +137,210 @@ void randomStrokedTri(){
   drawStrokedTri(triangle);
 }
 
-void drawFilledTri(CanvasTriangle triangle){
-  if (triangle.vertices[0].y > triangle.vertices[1].y){
-    swap(triangle.vertices[0],triangle.vertices[1]);
+void drawFilledTri(CanvasTriangle triangle)
+{
+  Colour colour = triangle.colour;
+  uint32_t colourUint = (colour.red<<16) + (colour.green<<8) + (colour.blue);
+  CanvasPoint a = triangle.vertices[0];
+  CanvasPoint b = triangle.vertices[1];
+  CanvasPoint c = triangle.vertices[2];
+  vector<CanvasPoint> list{a, b, c};
+  // Sorting list, descending order, c++ lambda function
+  sort(list.begin(), list.end(), [](const CanvasPoint& lhs,
+       const CanvasPoint& rhs) {
+    return lhs.y < rhs.y;});
+  CanvasPoint middlePoint = CanvasPoint(findIntersect(list[0], list[2],
+                                                      list[1].y), list[1].y);
+  CanvasTriangle temp =  CanvasTriangle(list[0], list[1], middlePoint, colour);
+  CanvasTriangle temp2 =  CanvasTriangle(list[1], list[2], middlePoint, colour);
+  // drawStrokedTri(temp);
+  // drawStrokedTri(temp2);
+  cout << list[0] << ", " << list[1] << ", " << list[2] << ", " << middlePoint << endl;
+  if(round(list[0].y) == round(list[1].y)){
+    cout << "bottom" << endl;
+    drawFilledBottomTri(list, middlePoint, colour);
   }
-  if (triangle.vertices[1].y > triangle.vertices[2].y){
-    swap(triangle.vertices[1],triangle.vertices[2]);
+  else if(round(list[1].y) == round(list[2].y)){
+    cout << "top" << endl;
+    drawFilledTopTri(list, middlePoint, colour);
+  }else{
+    cout << "top and bottom" << endl;
+    // drawStrokedTri(temp);
+    // drawStrokedTri(temp2);
+    drawFilledBottomTri(list, middlePoint, colour);
+    drawFilledTopTri(list, middlePoint, colour);
   }
 
-  float x0 = triangle.vertices[0].x;
-  float x2 = triangle.vertices[2].x;
-  float y0 = triangle.vertices[0].y;
-  float y1 = triangle.vertices[1].y;
-  float y2 = triangle.vertices[2].y;
-
-  float x = round(x0 + ((x2 - x0)*(y1 - y0)/(y2 - y0)));
-  CanvasPoint p = CanvasPoint(x,y1);
-
-  CanvasTriangle triangle1 = CanvasTriangle(triangle.vertices[0],triangle.vertices[1],p,triangle.colour);
-  CanvasTriangle triangle2 = CanvasTriangle(triangle.vertices[1],p,triangle.vertices[2],triangle.colour);
-
-  drawFilledTriFlat(triangle1,1);
-  drawFilledTriFlat(triangle2,2);
-
-  // drawStrokedTri(triangle1);
-  // drawStrokedTri(triangle2);
 }
 
-void drawFilledTriFlat(CanvasTriangle triangle, int tri) {
-  if (triangle.vertices[0].y == triangle.vertices[1].y) {
-    swap(triangle.vertices[0],triangle.vertices[2]);
-  }
-  else if (triangle.vertices[0].y== triangle.vertices[2].y) {
-    swap(triangle.vertices[0],triangle.vertices[1]);
-  }
-  
-  float x0 = triangle.vertices[0].x;
-  float x1 = triangle.vertices[1].x;
-  float x2 = triangle.vertices[2].x;
-  float y0 = triangle.vertices[0].y;
-  float y1 = triangle.vertices[1].y;
-  float y2 = triangle.vertices[2].y;
-
-  int top = y0;
-  int bottom = y1;
-  if (y0 > y1) {
-    top = y1;
-    bottom = y0;
-  }
-
-  for (int y = top; y < bottom; y++){
-    float a = x0 + ((x1 - x0)/(y1-y0))*(y-y0);
-    float b = x0 + ((x2 - x0)/(y2-y0))*(y-y0);
-
-    if (a > b) swap(a,b);
-
-    for (int x = round(a); x < round(b) ; x ++){
-      uint32_t pixel_colour = (255<<24) + (int(triangle.colour.red)<<16) + (int(triangle.colour.green)<<8) + int(triangle.colour.blue);
-      window.setPixelColour(x, y, pixel_colour);
+// Top Triangle
+void drawFilledTopTri(vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour){
+  for(int y = round(list[0].y); y < list[1].y; y++){
+    CanvasPoint TempA = CanvasPoint(findIntersect(list[0], middlePoint, y), y);
+    CanvasPoint TempB = CanvasPoint(findIntersect(list[0], list[1], y), y);
+    cout << TempA << TempB << endl;
+    if(TempA.x != TempB.x){ // Causes division by 0
+      drawLine(TempA, TempB, colour);
+    }else{
+      window.setPixelColour(list[0].x, y, (colour.red<<16) + (colour.green<<8) + (colour.blue));
     }
   }
 }
 
-void randomFilledTri(){
-  CanvasPoint point1 = CanvasPoint(rand() % window.width,rand() % window.height);
-  CanvasPoint point2 = CanvasPoint(rand() % window.width,rand() % window.height);
-  CanvasPoint point3 = CanvasPoint(rand() % window.width,rand() % window.height);
-  Colour colour = Colour(rand() % 255,rand() % 255,rand() % 255);
-  CanvasTriangle triangle = CanvasTriangle(point1,point2,point3,colour);
-  drawFilledTri(triangle);
+// Bottom Triangle
+void drawFilledBottomTri(vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour){
+  for(int y = round(list[1].y); y < list[2].y; y++){
+    CanvasPoint TempA = CanvasPoint(findIntersect(middlePoint, list[2], y), y);
+    CanvasPoint TempB = CanvasPoint(findIntersect(list[1], list[2], y), y);
+    if(TempA.x != TempB.x){ // Causes division by 0
+      drawLine(TempA, TempB, colour);
+    }else{
+      window.setPixelColour(list[2].x, y, (colour.red<<16) + (colour.green<<8) + (colour.blue));
+    }
+  }
 }
+
+float findIntersect(CanvasPoint from, CanvasPoint to, float yIntercept){
+  float x1 = from.x;
+  float y1 = from.y;
+  float x2 = to.x;
+  float y2 = to.y;
+  float xDiff = x2 - x1;
+  float yDiff = y2 - y1;
+  // if(yDiff == 0){
+  //   return y1;
+  // }
+  cout << yIntercept << ", " << from.y << ", " << to.y << endl;
+  if(round(yIntercept) == round(from.y)){
+    return x1;
+  }
+  if(round(yIntercept) == round(to.y)){
+    return x2;
+  }
+  float littleY = y1 - yIntercept;
+  float littleX = xDiff * (littleY / yDiff);
+  return x1 - littleX;
+  // float numberOfSteps = glm::max(abs(xDiff), abs(yDiff));
+  // float xStepSize = xDiff/numberOfSteps;
+  // float yStepSize = yDiff/numberOfSteps;
+  // for(int i = 0; i<numberOfSteps; i++){
+  //   int x = round(x1 + (xStepSize*i));
+  //   int y = round(y1 + (yStepSize*i));
+  //   if(y == yIntercept){
+  //     return x;
+  //   }
+  // }
+  // return 20;
+}
+
+// void drawFilledTri(CanvasTriangle triangle){
+//   if (triangle.vertices[0].y > triangle.vertices[1].y){
+//     swap(triangle.vertices[0],triangle.vertices[1]);
+//   }
+//   if (triangle.vertices[1].y > triangle.vertices[2].y){
+//     swap(triangle.vertices[1],triangle.vertices[2]);
+//   }
+//
+//   float x0 = triangle.vertices[0].x;
+//   float x2 = triangle.vertices[2].x;
+//   float y0 = triangle.vertices[0].y;
+//   float y1 = triangle.vertices[1].y;
+//   float y2 = triangle.vertices[2].y;
+//
+//   float x = round(x0 + ((x2 - x0)*(y1 - y0)/(y2 - y0)));
+//   CanvasPoint p = CanvasPoint(x,y1);
+//
+//   CanvasTriangle triangle1 = CanvasTriangle(triangle.vertices[0],triangle.vertices[1],p,triangle.colour);
+//   CanvasTriangle triangle2 = CanvasTriangle(triangle.vertices[1],p,triangle.vertices[2],triangle.colour);
+//
+//   // if(y0 == y1 || y1 == y2){
+//   //   drawFilledTriFlat(triangle1,1);
+//   // }else{void drawFilledTriangle(CanvasTriangle triangle)
+// {
+//   Colour colour = triangle.colour;
+//   uint32_t colourUint = (colour.red<<16) + (colour.green<<8) + (colour.blue);
+//   CanvasPoint a = triangle.vertices[0];
+//   CanvasPoint b = triangle.vertices[1];
+//   CanvasPoint c = triangle.vertices[2];
+//   vector<CanvasPoint> list{a, b, c};
+//   // Sorting list, descending order, c++ lambda function
+//   sort(list.begin(), list.end(), [](const CanvasPoint& lhs,
+//        const CanvasPoint& rhs) {
+//     return lhs.y < rhs.y;});
+//   CanvasPoint middlePoint = CanvasPoint(findIntersect(list[0], list[2],
+//                                                       list[1].y), list[1].y);
+//   // Top triangle
+//   for(int y = list[0].y; y < list[1].y; y++){
+//     CanvasPoint TempA = CanvasPoint(findIntersect(list[0], middlePoint, y), y);
+//     CanvasPoint TempB = CanvasPoint(findIntersect(list[0], list[1], y), y);
+//     if(TempA.x != TempB.x){ // Causes division by 0
+//       drawLine(TempA, TempB, triangle.colour);
+//     }else{
+//       window.setPixelColour(TempA.x, y, colourUint);
+//     }
+//   }
+//   // Bottom Triangle
+//   for(int y = list[1].y; y < list[2].y; y++){
+//     CanvasPoint TempA = CanvasPoint(findIntersect(middlePoint, list[2], y), y);
+//     CanvasPoint TempB = CanvasPoint(findIntersect(list[1], list[2], y), y);
+//     if(TempA.x != TempB.x){ // Causes division by 0
+//       drawLine(TempA, TempB, triangle.colour);
+//     }else{
+//       window.setPixelColour(TempA.x, y, colourUint);
+//     }
+//   }
+// }
+//     drawFilledTriFlat(triangle1,1);
+//     drawFilledTriFlat(triangle2,2);
+//   // }
+
+  // drawStrokedTri(triangle1);
+  // drawStrokedTri(triangle2);
+// }
+
+// void drawFilledTriFlat(CanvasTriangle triangle, int tri) {
+//   if (triangle.vertices[0].y == triangle.vertices[1].y) {
+//     swap(triangle.vertices[0],triangle.vertices[2]);
+//   }
+//   else if (triangle.vertices[0].y== triangle.vertices[2].y) {
+//     swap(triangle.vertices[0],triangle.vertices[1]);
+//   }
+//
+//   float x0 = triangle.vertices[0].x;
+//   float x1 = triangle.vertices[1].x;
+//   float x2 = triangle.vertices[2].x;
+//   float y0 = triangle.vertices[0].y;
+//   float y1 = triangle.vertices[1].y;
+//   float y2 = triangle.vertices[2].y;
+//
+//   int top = y0;
+//   int bottom = y1;
+//   if (y0 > y1) {
+//     top = y1;
+//     bottom = y0;
+//   }
+//
+//   for (int y = top; y < bottom; y++){
+//     float a = x0 + ((x1 - x0)/(y1-y0))*(y-y0);
+//     float b = x0 + ((x2 - x0)/(y2-y0))*(y-y0);
+//
+//     if (a > b) swap(a,b);
+//
+//     for (int x = round(a); x < round(b) ; x ++){
+//       uint32_t pixel_colour = (255<<24) + (int(triangle.colour.red)<<16) + (int(triangle.colour.green)<<8) + int(triangle.colour.blue);
+//       window.setPixelColour(x, y, pixel_colour);
+//     }
+//   }
+// }
+//
+// void randomFilledTri(){
+//   CanvasPoint point1 = CanvasPoint(rand() % window.width,rand() % window.height);
+//   CanvasPoint point2 = CanvasPoint(rand() % window.width,rand() % window.height);
+//   CanvasPoint point3 = CanvasPoint(rand() % window.width,rand() % window.height);
+//   Colour colour = Colour(rand() % 255,rand() % 255,rand() % 255);
+//   CanvasTriangle triangle = CanvasTriangle(point1,point2,point3,colour);
+//   drawFilledTri(triangle);
+// }
 
 char*** readPayload(string filename){
   std::ifstream ifs;
@@ -217,7 +355,7 @@ char*** readPayload(string filename){
   char dimensions[256];
   ifs.getline(dimensions,256);
   string dimensionsString(dimensions);
-  size_t found = dimensionsString.find(" "); 
+  size_t found = dimensionsString.find(" ");
   int width = stoi(dimensionsString.substr(0,found));
   int height = stoi(dimensionsString.substr(found+1));
 
@@ -226,7 +364,7 @@ char*** readPayload(string filename){
 
   char*** image;
   image = malloc3dArray(width,height,3);
-  for (int y = 0; y < height; y++){  
+  for (int y = 0; y < height; y++){
     for (int x = 0; x < width; x++){
       ifs.get(image[x][y][0]);
       ifs.get(image[x][y][1]);
@@ -249,7 +387,7 @@ void displayPPMImage(string filename){
   char dimensions[256];
   ifs.getline(dimensions,256);
   string dimensionsString(dimensions);
-  size_t found = dimensionsString.find(" "); 
+  size_t found = dimensionsString.find(" ");
   int width = stoi(dimensionsString.substr(0,found));
   int height = stoi(dimensionsString.substr(found+1));
   if ((width != window.width) || (height!= window.height)){
@@ -260,13 +398,13 @@ void displayPPMImage(string filename){
   char maxColStr[256];
   ifs.getline(maxColStr,256);
   int maxCol = stoi(maxColStr);
-  
+
   cout << maxCol << endl;
 
   char*** image;
   image = readPayload(filename);
 
-  for (int y = 0; y < height; y++){  
+  for (int y = 0; y < height; y++){
     for (int x = 0; x < width; x++){
       uint32_t pixel_colour = (255<<24) + (int(image[x][y][0])<<16) + (int(image[x][y][1])<<8) + int(image[x][y][2]);
       window.setPixelColour(x, y, pixel_colour);
@@ -335,7 +473,7 @@ void drawTextureTriangleFlatBottom(CanvasTriangle triangle, string filename){
     } else {
     float* xScaleTexture = interpolate(textureEdgeXScale1[i],textureEdgeXScale2[i],numPixelsInRow);
     float* yScaleTexture = interpolate(textureEdgeYScale1[i],textureEdgeYScale2[i],numPixelsInRow);
-    
+
       for (int j = 0; j < numPixelsInRow; j++){
         int red = int(image[int(xScaleTexture[j])][int(yScaleTexture[j])][0]);
         int green = int(image[int(xScaleTexture[j])][int(yScaleTexture[j])][1]);
@@ -372,7 +510,7 @@ void drawTextureTriangleFlatTop(CanvasTriangle triangle, string filename){
     } else {
     float* xScaleTexture = interpolate(textureEdgeXScale1[i],textureEdgeXScale2[i],numPixelsInRow);
     float* yScaleTexture = interpolate(textureEdgeYScale1[i],textureEdgeYScale2[i],numPixelsInRow);
-    
+
       for (int j = 0; j < numPixelsInRow; j++){
         int red = int(image[int(xScaleTexture[j])][int(yScaleTexture[j])][0]);
         int green = int(image[int(xScaleTexture[j])][int(yScaleTexture[j])][1]);
@@ -473,7 +611,8 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, fl
     string colourString(material);
     size_t found = colourString.find(" ");
     string newMaterial = colourString.substr(found + 1);
-    for(int i = 0; i < materials.size(); i ++){
+    int materialssize = materials.size();
+    for(int i = 0; i < materialssize; i ++){
       if(newMaterial == materials[i].name){
         newTriangle.colour = materials[i];
       }
@@ -521,8 +660,9 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, fl
       newTriangle.vertices[2] = points[index - 1];
 
       ifs.getline(point,256);
+      ModelTriangles.push_back(newTriangle);
     }
-    ModelTriangles.push_back(newTriangle);
+
   }
   return ModelTriangles;
 }
@@ -545,6 +685,6 @@ CanvasPoint projectPointOnImagePlane(vec3 point, vec3 cameraPosition, mat4x4 cam
   float proportion = smallZ/bigZ;
   float littleX = bigX * proportion * 40.0;
   float littleY = bigY * proportion * 40.0;
-  CanvasPoint result = CanvasPoint(littleX + WIDTH/2,-littleY + HEIGHT/2);
+  CanvasPoint result = CanvasPoint(-littleX + WIDTH/2,littleY + HEIGHT/2);
   return result;
 }
