@@ -56,6 +56,6 @@ CanvasPoint projectPointOnImagePlane(vec3 point, vec3 cameraPosition, mat4x4 cam
   float proportion = smallZ/bigZ;
   float littleX = bigX * proportion * 40.0;
   float littleY = bigY * proportion * 40.0;
-  CanvasPoint result = CanvasPoint(-littleX + WIDTH/2,littleY + HEIGHT/2);
+  CanvasPoint result = CanvasPoint(-littleX + WIDTH/2,littleY + HEIGHT/2, double(bigZ));
   return result;
 }

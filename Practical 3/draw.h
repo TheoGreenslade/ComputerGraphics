@@ -1,3 +1,5 @@
+#include "depthBuffer.h"
+
 #define WIDTH 600
 #define HEIGHT 600
 
@@ -45,7 +47,9 @@ void drawFilledTri(DrawingWindow window, CanvasTriangle triangle)
        const CanvasPoint& rhs) {
     return lhs.y < rhs.y;});
 
-  CanvasPoint middlePoint = CanvasPoint(findIntersect(list[0], list[2], list[1].y), list[1].y);
+  double depth = calculateDepth(list[0],list[2],list[1].y);
+
+  CanvasPoint middlePoint = CanvasPoint(findIntersect(list[0], list[2], list[1].y), list[1].y, depth);
   CanvasTriangle temp =  CanvasTriangle(list[0], list[1], middlePoint, colour);
   CanvasTriangle temp2 =  CanvasTriangle(list[1], list[2], middlePoint, colour);
   drawStrokedTri(window, triangle);
@@ -134,3 +138,4 @@ void displayPPMImage(DrawingWindow window, string filename){
   }
   ifs.close();
 }
+

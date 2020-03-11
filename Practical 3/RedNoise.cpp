@@ -22,6 +22,7 @@ void handleEvent(SDL_Event event);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = 5;
+float depthBuffer[WIDTH][HEIGHT];
 
 int main(int argc, char* argv[])
 {
@@ -31,6 +32,12 @@ int main(int argc, char* argv[])
     if(window.pollForInputEvents(&event)) handleEvent(event);
 
     update();
+
+    for (int i = 0; i < WIDTH; i++){
+      for (int j = 0; j < HEIGHT; j++){
+        depthBuffer[i][j] = std::numeric_limits<float>::infinity();
+      }
+    }
 
     vector<Colour> materials = readMaterials("cornell-box/cornell-box.mtl");
     vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
@@ -44,6 +51,22 @@ int main(int argc, char* argv[])
       //drawStrokedTri(temp);
       drawFilledTri(window, temp);
     }
+
+    // Pixel temp1;
+    // temp1.x = 50;
+    // temp1.y = 200;
+    // temp1.zinv = 49;
+
+    // Pixel temp2;
+    // temp2.x = 100;
+    // temp2.y = 10;
+    // temp2.zinv = 23;
+
+    // vector<Pixel> pixels= interpolatePixels(temp1,temp2);
+    // for(int i = 0; i < pixels.size(); i++){
+    //  cout << pixels[i].x << "," << pixels[i].y << "," << pixels[i].zinv << endl;
+    // }
+
     window.renderFrame();
   }
 }
