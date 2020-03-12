@@ -6,12 +6,33 @@
 using namespace std;
 using namespace glm;
 
+void initialiseDepth();
+void initialiseWindow(DrawingWindow window);
 void drawLine(DrawingWindow window, CanvasPoint start, CanvasPoint end, Colour colour);
 void drawStrokedTri(DrawingWindow window, CanvasTriangle triangle);
 void drawFilledTri(DrawingWindow window, CanvasTriangle triangle);
 void drawFilledTopTri(DrawingWindow window, vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour);
 void drawFilledBottomTri(DrawingWindow window, vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour);
 float findIntersect(CanvasPoint from, CanvasPoint to, float yIntercept);
+
+float depthBuffer[WIDTH][HEIGHT];
+
+void initialiseDepth(){
+  for (int i = 0; i < WIDTH; i++){
+    for (int j = 0; j < HEIGHT; j++){
+      depthBuffer[i][j] = std::numeric_limits<float>::infinity();
+    }
+  }
+}
+
+void initialiseWindow(DrawingWindow window){
+  uint32_t black =  0;
+  for (int i = 0; i < WIDTH; i++){
+    for (int j = 0; j < HEIGHT; j++){
+      window.setPixelColour(i, j, black);
+    }
+  }
+}
 
 void drawLine(DrawingWindow window, CanvasPoint start, CanvasPoint end, Colour colour){
   float xDiff = end.x - start.x;
@@ -20,12 +41,21 @@ void drawLine(DrawingWindow window, CanvasPoint start, CanvasPoint end, Colour c
   float xStepSize = xDiff/numberOfSteps;
   float yStepSize = yDiff/numberOfSteps;
 
+  float zDiff = end.depth - start.depth;
+  float zStepSize = zDiff/numberOfSteps;
+
   uint32_t pixel_colour = (255<<24) + (int(colour.red)<<16) + (int(colour.green)<<8) + int(colour.blue);
 
   for (float i=0.0; i<numberOfSteps; i++) {
     float x = start.x + (xStepSize*i);
     float y = start.y + (yStepSize*i);
-    window.setPixelColour(round(x), round(y), pixel_colour);
+    float z = abs(start.depth + (zStepSize*i));
+    if((x < WIDTH-1) && (y < HEIGHT-1) && (x >= 0) && (y >= 0)){
+      if(z < depthBuffer[(int)round(x)][(int)round(y)]){
+        depthBuffer[(int)round(x)][(int)round(y)] = z;
+        window.setPixelColour(round(x), round(y), pixel_colour);
+      }
+    }
   }
 }
 
@@ -48,36 +78,40 @@ void drawFilledTri(DrawingWindow window, CanvasTriangle triangle)
     return lhs.y < rhs.y;});
 
   double depth = calculateDepth(list[0],list[2],list[1].y);
-
   CanvasPoint middlePoint = CanvasPoint(findIntersect(list[0], list[2], list[1].y), list[1].y, depth);
   CanvasTriangle temp =  CanvasTriangle(list[0], list[1], middlePoint, colour);
   CanvasTriangle temp2 =  CanvasTriangle(list[1], list[2], middlePoint, colour);
-  drawStrokedTri(window, triangle);
+
   drawFilledBottomTri(window, list, middlePoint, colour);
   drawFilledTopTri(window, list, middlePoint, colour);
+  drawStrokedTri(window, triangle);
 
 }
 
 void drawFilledTopTri(DrawingWindow window, vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour){
   for(int y = round(list[0].y); y < list[1].y; y++){
-    CanvasPoint TempA = CanvasPoint(findIntersect(list[0], middlePoint, y), y);
-    CanvasPoint TempB = CanvasPoint(findIntersect(list[0], list[1], y), y);
+
+    double depthTempA = calculateDepth(list[0], middlePoint, y);
+    double depthTempB = calculateDepth(list[0],list[1], y);
+
+    CanvasPoint TempA = CanvasPoint(findIntersect(list[0], middlePoint, y), y, depthTempA);
+    CanvasPoint TempB = CanvasPoint(findIntersect(list[0], list[1], y), y, depthTempB);
     if(TempA.x != TempB.x){ // Causes division by 0
       drawLine(window, TempA, TempB, colour);
-    }else{
-      window.setPixelColour(list[0].x, y, (colour.red<<16) + (colour.green<<8) + (colour.blue));
-    }
+     }
   }
 }
 
 void drawFilledBottomTri(DrawingWindow window, vector<CanvasPoint> list, CanvasPoint middlePoint, Colour colour){
   for(int y = round(list[1].y); y < list[2].y; y++){
-    CanvasPoint TempA = CanvasPoint(findIntersect(middlePoint, list[2], y), y);
-    CanvasPoint TempB = CanvasPoint(findIntersect(list[1], list[2], y), y);
+
+    double depthTempA = calculateDepth(middlePoint, list[2], y);
+    double depthTempB = calculateDepth(list[1],list[2], y);
+
+    CanvasPoint TempA = CanvasPoint(findIntersect(middlePoint, list[2], y), y, depthTempA);
+    CanvasPoint TempB = CanvasPoint(findIntersect(list[1], list[2], y), y, depthTempB);
     if(TempA.x != TempB.x){ // Causes division by 0
       drawLine(window, TempA, TempB, colour);
-    }else{
-      window.setPixelColour(list[2].x, y, (colour.red<<16) + (colour.green<<8) + (colour.blue));
     }
   }
 }
@@ -138,4 +172,3 @@ void displayPPMImage(DrawingWindow window, string filename){
   }
   ifs.close();
 }
-
