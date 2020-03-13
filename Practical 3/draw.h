@@ -20,7 +20,7 @@ float depthBuffer[WIDTH][HEIGHT];
 void initialiseDepth(){
   for (int i = 0; i < WIDTH; i++){
     for (int j = 0; j < HEIGHT; j++){
-      depthBuffer[i][j] = std::numeric_limits<float>::infinity();
+      depthBuffer[i][j] = -(std::numeric_limits<float>::infinity());
     }
   }
 }
@@ -49,11 +49,13 @@ void drawLine(DrawingWindow window, CanvasPoint start, CanvasPoint end, Colour c
   for (float i=0.0; i<numberOfSteps; i++) {
     float x = start.x + (xStepSize*i);
     float y = start.y + (yStepSize*i);
-    float z = abs(start.depth + (zStepSize*i));
-    if((x < WIDTH-1) && (y < HEIGHT-1) && (x >= 0) && (y >= 0)){
-      if(z < depthBuffer[(int)round(x)][(int)round(y)]){
-        depthBuffer[(int)round(x)][(int)round(y)] = z;
-        window.setPixelColour(round(x), round(y), pixel_colour);
+    float z = start.depth + (zStepSize*i);
+    if (z < 0){
+      if((x < WIDTH-1) && (y < HEIGHT-1) && (x >= 0) && (y >= 0)){
+        if(z > depthBuffer[(int)round(x)][(int)round(y)]){
+          depthBuffer[(int)round(x)][(int)round(y)] = z;
+          window.setPixelColour(round(x), round(y), pixel_colour);
+        }
       }
     }
   }
