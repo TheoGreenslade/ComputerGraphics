@@ -1,6 +1,7 @@
 #include <ModelTriangle.h>
 #include <CanvasTriangle.h>
 #include <DrawingWindow.h>
+#include <RayTriangleIntersection.h>
 #include <Utils.h>
 #include <glm/glm.hpp>
 #include <fstream>
@@ -10,6 +11,7 @@
 #include "read.h"
 #include "textureMap.h"
 #include "draw.h"
+#include "raytrace.h"
 
 using namespace std;
 using namespace glm;
@@ -19,12 +21,15 @@ using namespace glm;
 #define PI 3.14159265
 
 void update(vec3 cameraTransform, mat3x3 cameraRotationTransform);
+void wireframe(DrawingWindow window, vector<ModelTriangle> triangles);
+void rasterise(DrawingWindow window, vector<ModelTriangle> triangles);
 void handleEvent(SDL_Event event);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
 vec3 cameraPosition = vec3(0,3,3);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
+int mode = 2;
 
 int main(int argc, char* argv[])
 {
@@ -32,19 +37,37 @@ int main(int argc, char* argv[])
   vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
 
   SDL_Event event;
+  int count = 0;
   while(true)
   {
     if(window.pollForInputEvents(&event)) handleEvent(event);
     initialiseDepth();
     initialiseWindow(window);
-
-    int trianglessize = triangles.size();
-    for(int i = 0; i < trianglessize; i++){
-      CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
-      //drawStrokedTri(temp);
-      drawFilledTri(window, temp);
+    if(mode == 1){
+      wireframe(window, triangles);
+    }else if(mode == 2){
+      rasterise(window, triangles);
+    }else if(mode == 3){
+      raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
     }
     window.renderFrame();
+    count++;
+  }
+}
+
+void wireframe(DrawingWindow window, vector<ModelTriangle> triangles){
+  int trianglessize = triangles.size();
+  for(int i = 0; i < trianglessize; i++){
+    CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
+    drawStrokedTri(window, temp);
+  }
+}
+
+void rasterise(DrawingWindow window, vector<ModelTriangle> triangles){
+  int trianglessize = triangles.size();
+  for(int i = 0; i < trianglessize; i++){
+    CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
+    drawFilledTri(window, temp);
   }
 }
 
@@ -94,6 +117,11 @@ void handleEvent(SDL_Event event)
 
     else if(event.key.keysym.sym == SDLK_l) lookat();
     else if(event.key.keysym.sym == SDLK_o) orbit();
+
+    else if(event.key.keysym.sym == SDLK_1) mode = 1;
+    else if(event.key.keysym.sym == SDLK_2) mode = 2;
+    else if(event.key.keysym.sym == SDLK_3) mode = 3;
+
   }
   else if(event.type == SDL_MOUSEBUTTONDOWN){
    cout << "MOUSE CLICKED: x:" << event.button.x << " y:" << event.button.y << endl;
