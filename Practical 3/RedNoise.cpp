@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <fstream>
 #include <vector>
+#include <math.h>
+#include <algorithm>
 
 #include "projectTriangles.h"
 #include "read.h"
@@ -29,6 +31,7 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
 vec3 cameraPosition = vec3(0,3,3);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
+vec3 lightSource = vec3(-0.234, 4, -2);
 int mode = 2;
 
 int main(int argc, char* argv[])
@@ -37,7 +40,6 @@ int main(int argc, char* argv[])
   vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
 
   SDL_Event event;
-  int count = 0;
   while(true)
   {
     if(window.pollForInputEvents(&event)) handleEvent(event);
@@ -45,13 +47,15 @@ int main(int argc, char* argv[])
     initialiseWindow(window);
     if(mode == 1){
       wireframe(window, triangles);
+      window.renderFrame();
     }else if(mode == 2){
       rasterise(window, triangles);
+      window.renderFrame();
     }else if(mode == 3){
-      raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
+      raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
+      mode = 0;
+      window.renderFrame();
     }
-    window.renderFrame();
-    count++;
   }
 }
 
@@ -89,7 +93,18 @@ void lookat() {
 }
 
 void orbit() {
-  // vec3 vec = vec3(cameraPosition)/40, 0, 0);
+  float x = cameraPosition[0];
+  float z = cameraPosition[2];
+  float oldAngle = atan2(z, x);
+  float newAngle = oldAngle + 0.1745;
+  float r = sqrt((x*x) + (z*z));
+  float newX = cos(newAngle)*r;
+  float newZ = sin(newAngle)*r;
+  cameraPosition = vec3(newX,cameraPosition[1],newZ);
+  lookat();
+  // update(vec3(1, 0, 0),  mat3(1,0,0,0,1,0,0,0,1));
+
+  // vec3 vec = vec3(cameraPosition/40, 0, 0);
   // vec3 vec2 = cameraRotation*vec;
   // update(vec3(length(vec2[0], vec2.y, vec2.z), mat3(1,0,0,0,1,0,0,0,1));
 }
