@@ -31,7 +31,7 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
 vec3 cameraPosition = vec3(0,3,3);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
-vec3 lightSource = vec3(-0.234, 4, -2);
+vec3 lightSource = vec3(0, 3, -1);
 int mode = 2;
 
 int main(int argc, char* argv[])
