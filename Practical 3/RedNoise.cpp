@@ -31,7 +31,7 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
 vec3 cameraPosition = vec3(0,3,3);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
-vec3 lightSource = vec3(0, 3, -1);
+vec3 lightSource = vec3(0, 3, -2);
 int mode = 2;
 
 int main(int argc, char* argv[])
@@ -70,8 +70,10 @@ void wireframe(DrawingWindow window, vector<ModelTriangle> triangles){
 void rasterise(DrawingWindow window, vector<ModelTriangle> triangles){
   int trianglessize = triangles.size();
   for(int i = 0; i < trianglessize; i++){
+  // for(int i = 20; i < 21; i++){
     CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
     drawFilledTri(window, temp);
+    // cout << triangles[i] << endl;
   }
 }
 
