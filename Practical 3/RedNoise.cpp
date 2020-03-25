@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include "projectTriangles.h"
-#include "read.h"
+#include "readAndWrite.h"
 #include "textureMap.h"
 #include "draw.h"
 #include "raytrace.h"
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 3){
       raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
-      mode = 0;
+      // mode = 0;
       window.renderFrame();
     }
   }
@@ -138,6 +138,8 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_1) mode = 1;
     else if(event.key.keysym.sym == SDLK_2) mode = 2;
     else if(event.key.keysym.sym == SDLK_3) mode = 3;
+
+    else if(event.key.keysym.sym == SDLK_p) writePPMFile(window);
 
   }
   else if(event.type == SDL_MOUSEBUTTONDOWN){

@@ -172,3 +172,38 @@ char ***malloc3dArray(int dim1, int dim2, int dim3){
     }
     return array;
 }
+
+void writePPMFile(DrawingWindow window){
+  ofstream myfile;
+  myfile.open ("image.ppm");
+  myfile << "P6\n";
+  myfile << "# output from renderer\n";
+  myfile << WIDTH << " " << HEIGHT << "\n";
+  myfile << "255\n";
+
+  for (int y = 0; y < HEIGHT; y++){
+    for (int x = 0; x < WIDTH; x++){
+      // uint32_t colour = window.getPixelColour(x,y);
+      // // cout << colour << endl;
+      // std::string binaryColour = std::bitset<32>(colour).to_string();
+      // int add = 0;
+ 
+      // char red = static_cast<char>(std::stoi(binaryColour.substr(8,8),0,2)+add);
+      // char green = static_cast<char>(std::stoi(binaryColour.substr(16,8),0,2)+add);
+      // char blue = static_cast<char>(std::stoi(binaryColour.substr(24),0,2)+add);
+      // // cout << binaryColour << endl << binaryColour.substr(8,8) << endl << binaryColour.substr(16,8) << endl << binaryColour.substr(24) << endl;
+      // myfile << red << green << blue;
+
+      uint32_t colour = window.getPixelColour(x,y);
+      uint32_t red = (colour >> 16) & 0xff;
+      uint32_t green = (colour >> 8) & 0xff;
+      uint32_t blue = colour & 0xff;
+      char redChar = static_cast<char>(red);
+      char greenChar = static_cast<char>(green);
+      char blueChar = static_cast<char>(blue);
+      myfile << redChar << greenChar << blueChar;
+    }
+  }
+  myfile.close();
+  cout << "Saved to image.ppm" << endl;
+}

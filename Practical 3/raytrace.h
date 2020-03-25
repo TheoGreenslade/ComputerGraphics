@@ -22,21 +22,11 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
       vec3 r = normalize(temp * cameraRotation);
       RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,triangles);
 
-      // if ( (i==1) && (j==1) ){
-      //   cout << "camera position: " << cameraPosition.x << "," << cameraPosition.y << "," << cameraPosition.z << endl << endl;
-      //   cout << "temp: " << temp.x << "," << temp.y << "," << temp.z << endl << endl;
-      //   cout << "r: " << r.x << "," << r.y << "," << r.z << endl << endl;
-      //   cout << "intersected triangle" << intersection.intersectedTriangle << endl;
-      // }
-
       if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
         float b = proximityLighting(intersection, lightSource);
         float a = angleOfIncidence(intersection, lightSource);
         float brightness = std::max(b * a, ambientLight);
         if(inHardShaddow(intersection, lightSource, triangles, i, j)){
-          // if( i == 387 && (HEIGHT - 1 - j) == 395){
-          //   cout << i << ", " << HEIGHT - 1 - j << ", " << intersection.distanceFromCamera << endl;
-          // }
           brightness = ambientLight;
         }
         Colour colour = intersection.intersectedTriangle.colour;
@@ -110,15 +100,7 @@ bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTr
 
   RayTriangleIntersection intersection = getClosestIntersection(point, normalize(vecToLight), triangles);
   float distanceToLight = sqrt(pow(vecToLight[0],2) + pow(vecToLight[1],2) + pow(vecToLight[2],2));
-  //cout << "dist to light - " << distanceToLight << ", "  << "dist to camera - " << intersection.distanceFromCamera<< endl;
-
-  if ( (i==391) && (j==388) ){
-    cout << endl << "light source: " << lightSource.x << "," << lightSource.y << "," << lightSource.z << endl << endl;
-    cout << "point: " << point.x << "," << point.y << "," << point.z << endl << endl;
-    cout << "vecToLight: "<< vecToLight.x << "," << vecToLight.y << "," << vecToLight.z << endl << endl;
-    cout << "triangle projecting from:" << endl << rTI.intersectedTriangle << endl;
-    cout << "intersected triangle:" << endl << intersection.intersectedTriangle << endl;
-  }
+  
   if(intersection.distanceFromCamera == std::numeric_limits<float>::infinity()) return false;
   else if(distanceToLight > abs(intersection.distanceFromCamera)) return true;
   else return false;
