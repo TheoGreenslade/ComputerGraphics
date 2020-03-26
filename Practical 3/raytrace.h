@@ -11,6 +11,7 @@ float proximityLighting(RayTriangleIntersection RayTriangleIntersection, vec3 li
 float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource);
 bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j);
 vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles);
+void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource);
 
 void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
   float ambientLight = 0.2;
@@ -117,4 +118,48 @@ bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTr
   }
   if(remove) triangles.erase(triangles.begin()+index);
   return triangles;
+}
+
+void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
+  float ambientLight = 0.2;
+  cout << "Raytracing..." << endl;
+
+  for(int i = 0; i < WIDTH - 1; i++){
+    for(int j = 0; j < HEIGHT - 1; j++){
+
+      vec3 rayColour = vec3(0,0,0);
+
+      for(int x = 0; x < 4; x++){
+        for(int y = 0; y < 4; y++){
+          float AAshiftTempX = ((x*2)-3);
+          float AAshiftX = AAshiftTempX/8;
+          float AAshiftTempY = ((y*2)-3);
+          float AAshiftY = AAshiftTempY/8;
+          float tempX = i-(WIDTH/2) + AAshiftX;
+          float tempY = (HEIGHT/2)-j + AAshiftY;
+
+          vec3 temp = vec3(tempX,tempY, -distanceOfImagePlaneFromCamera);
+          vec3 r = normalize(temp * cameraRotation);
+          RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,triangles);
+
+          if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
+            float b = proximityLighting(intersection, lightSource);
+            float a = angleOfIncidence(intersection, lightSource);
+            float brightness = std::max(b * a, ambientLight);
+            if(inHardShaddow(intersection, lightSource, triangles, i, j)){
+              brightness = ambientLight;
+            }
+            Colour colour = intersection.intersectedTriangle.colour;
+            vec3 rayColourNew = vec3((colour.red * brightness),(colour.green * brightness),(colour.blue * brightness));
+            rayColour = rayColour + rayColourNew;
+          }
+        }
+      }
+      vec3 scale = vec3(16,16,16);
+      rayColour = rayColour / scale;
+      uint32_t pixel_colour = (255<<24) + (int(rayColour.x)<<16) + (int(rayColour.y)<<8) + int(rayColour.z);
+      window.setPixelColour(i, j, pixel_colour);
+    }
+  }
+  cout << "done." << endl;
 }
