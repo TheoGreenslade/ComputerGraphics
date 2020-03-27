@@ -14,6 +14,7 @@
 #include "textureMap.h"
 #include "draw.h"
 #include "raytrace.h"
+#include "generativeGeometry.h"
 
 using namespace std;
 using namespace glm;
@@ -57,6 +58,11 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 4){
       raytraceAntiAlias(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
+      mode = 0;
+      window.renderFrame();
+    }else if(mode == 5){
+      vector<ModelTriangle> plane = generatePlane(5, 5);
+      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
       mode = 0;
       window.renderFrame();
     }
@@ -143,6 +149,7 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_2) mode = 2;
     else if(event.key.keysym.sym == SDLK_3) mode = 3;
     else if(event.key.keysym.sym == SDLK_4) mode = 4;
+    else if(event.key.keysym.sym == SDLK_5) mode = 5;
 
     else if(event.key.keysym.sym == SDLK_p) writePPMFile(window);
 
