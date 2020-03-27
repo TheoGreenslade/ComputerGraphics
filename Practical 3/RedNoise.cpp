@@ -15,6 +15,7 @@
 #include "draw.h"
 #include "raytrace.h"
 #include "generativeGeometry.h"
+#include "culling.h"
 
 using namespace std;
 using namespace glm;
@@ -39,21 +40,25 @@ int main(int argc, char* argv[])
 {
   vector<Colour> materials = readMaterials("cornell-box/cornell-box.mtl");
   vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
-
+  
   SDL_Event event;
   while(true)
   {
     if(window.pollForInputEvents(&event)) handleEvent(event);
     initialiseDepth();
     initialiseWindow(window);
+    vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
+    // cout << visibleTriangles.size() << endl;
     if(mode == 1){
       wireframe(window, triangles);
       window.renderFrame();
     }else if(mode == 2){
-      rasterise(window, triangles);
+      // rasterise(window, triangles);
+      rasterise(window, visibleTriangles);
       window.renderFrame();
     }else if(mode == 3){
-      raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
+      // cullTriangles(triangles, cameraPosition);
+      raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
       mode = 0;
       window.renderFrame();
     }else if(mode == 4){
@@ -62,7 +67,8 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 5){
       vector<ModelTriangle> plane = generatePlane(5, 5);
-      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
+      vector<ModelTriangle> visibleTriangles = cullTriangles(plane, cameraPosition);
+      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
       mode = 0;
       window.renderFrame();
     }

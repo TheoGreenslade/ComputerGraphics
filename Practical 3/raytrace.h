@@ -5,7 +5,7 @@
 using namespace std;
 using namespace glm;
 
-void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource);
+void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles);
 RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vector<ModelTriangle> triangles);
 float proximityLighting(RayTriangleIntersection RayTriangleIntersection, vec3 lightSource);
 float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource);
@@ -15,7 +15,7 @@ void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, ve
 float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel);
 
 // RAYTRACE FUNCTIONS //////////////////////////////////////////////////////////
-void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
+void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
   float ambientLight = 0.2;
   float specIntensity = 0.2;
   int specPower = 10;
@@ -25,7 +25,7 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
     for(int j = 0; j < HEIGHT - 1; j++){
       vec3 temp = vec3(i-(WIDTH/2),(HEIGHT/2)-j, -distanceOfImagePlaneFromCamera);
       vec3 r = normalize(temp * cameraRotation);
-      RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,triangles);
+      RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
 
       if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
         float b = proximityLighting(intersection, lightSource);
