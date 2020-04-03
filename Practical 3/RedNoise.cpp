@@ -16,6 +16,7 @@
 #include "raytrace.h"
 #include "generativeGeometry.h"
 #include "culling.h"
+#include "physics.h"
 
 using namespace std;
 using namespace glm;
@@ -35,18 +36,25 @@ vec3 cameraPosition = vec3(0,3,3);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
 vec3 lightSource = vec3(0, 4.5, -2.8);
 int mode = 2;
+vector<ModelTriangle> initialTriangles;
+vector<ModelTriangle> triangles;
+vector<Colour> materials;
 
 int main(int argc, char* argv[])
 {
-  vector<Colour> materials = readMaterials("cornell-box/cornell-box.mtl");
-  vector<ModelTriangle> triangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
-  
+  materials = readMaterials("cornell-box/cornell-box.mtl");
+  initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
+  triangles = initialTriangles;
+  triangles = liftCubes(triangles);
+  initialiseVelocities(materials);
+  initialiseCORs(materials);
   SDL_Event event;
   while(true)
   {
     if(window.pollForInputEvents(&event)) handleEvent(event);
     initialiseDepth();
     initialiseWindow(window);
+    triangles = gravity(triangles, velocities,materials);
     vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
     // cout << visibleTriangles.size() << endl;
     if(mode == 1){
@@ -59,7 +67,7 @@ int main(int argc, char* argv[])
     }else if(mode == 3){
       // cullTriangles(triangles, cameraPosition);
       raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
-      mode = 0;
+      // mode = 0;
       window.renderFrame();
     }else if(mode == 4){
       raytraceAntiAlias(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
@@ -146,7 +154,14 @@ void handleEvent(SDL_Event event)
 
     else if(event.key.keysym.sym == SDLK_r){
       cameraPosition = vec3(0,3,3);
-      cameraRotation = mat3(1,0,0,0,1,0,0,0,1);}
+      cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
+      triangles = initialTriangles;
+    }
+
+    else if(event.key.keysym.sym == SDLK_g){
+      triangles = liftCubes(triangles);
+      initialiseVelocities(materials);
+    }
 
     else if(event.key.keysym.sym == SDLK_l) lookat();
     else if(event.key.keysym.sym == SDLK_o) orbit();

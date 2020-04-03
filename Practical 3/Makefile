@@ -9,7 +9,7 @@ WINDOW_OBJECT = libs/sdw/DrawingWindow.o
 
 # Build settings
 COMPILER = g++
-COMPILER_OPTIONS = -c -pipe -Wall -std=c++11 -O3
+COMPILER_OPTIONS = -c -pipe -Wall -std=c++11 -Ofast
 DEBUG_OPTIONS = -ggdb -g3
 # FUSSY_OPTIONS = -Werror -pedantic
 # SANITIZER_OPTIONS = -O1 -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer
