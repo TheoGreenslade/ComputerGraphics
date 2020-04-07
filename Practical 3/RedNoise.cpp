@@ -74,9 +74,9 @@ int main(int argc, char* argv[])
       mode = 0;
       window.renderFrame();
     }else if(mode == 5){
-      vector<ModelTriangle> plane = generatePlane(5, 5);
-      vector<ModelTriangle> visibleTriangles = cullTriangles(plane, cameraPosition);
-      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
+      vector<ModelTriangle> plane = generatePlane(5, 5, -2.5, -5);
+      //vector<ModelTriangle> visibleTriangles = cullTriangles(plane, cameraPosition);
+      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane);
       mode = 0;
       window.renderFrame();
     }
