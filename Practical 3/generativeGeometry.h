@@ -33,8 +33,8 @@ vector<ModelTriangle> generatePlane(int xs, int zs, int startx, int startz){
         ModelTriangle newTriangle;
         newTriangle.colour = newColour;
         newTriangle.vertices[0] = points[i];
-        newTriangle.vertices[1] = points[i + xs];
-        newTriangle.vertices[2] = points[i + xs + 1];
+        newTriangle.vertices[2] = points[i + xs];
+        newTriangle.vertices[1] = points[i + xs + 1];
         generatedTriangles.push_back(newTriangle);
         newTriangle.vertices[0] = points[i];
         newTriangle.vertices[1] = points[i + 1];
