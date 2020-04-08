@@ -34,11 +34,12 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
 vec3 cameraPosition = vec3(0,3,3);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
-vec3 lightSource = vec3(0, 4.5, -2.8);
+vec3 lightSource = vec3(0, 4, -1.8);
 int mode = 2;
 vector<ModelTriangle> initialTriangles;
 vector<ModelTriangle> triangles;
 vector<Colour> materials;
+vector<ModelTriangle> sphere;
 
 int main(int argc, char* argv[])
 {
@@ -46,6 +47,7 @@ int main(int argc, char* argv[])
   initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
   triangles = initialTriangles;
   triangles = liftCubes(triangles);
+  sphere = readGeometrySphere("sphere.obj", 0.1);
   initialiseVelocities(materials);
   initialiseCORs(materials);
   SDL_Event event;
@@ -67,7 +69,7 @@ int main(int argc, char* argv[])
     }else if(mode == 3){
       // cullTriangles(triangles, cameraPosition);
       raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
-      // mode = 0;
+      mode = 0;
       window.renderFrame();
     }else if(mode == 4){
       raytraceAntiAlias(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
@@ -77,6 +79,11 @@ int main(int argc, char* argv[])
       vector<ModelTriangle> plane = generatePlane(5, 5, -2.5, -5);
       //vector<ModelTriangle> visibleTriangles = cullTriangles(plane, cameraPosition);
       raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane);
+      mode = 0;
+      window.renderFrame();
+    }else if(mode == 6){
+      //rasterise(window, sphere);
+      raytrace(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), sphere);
       mode = 0;
       window.renderFrame();
     }
@@ -171,6 +178,7 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_3) mode = 3;
     else if(event.key.keysym.sym == SDLK_4) mode = 4;
     else if(event.key.keysym.sym == SDLK_5) mode = 5;
+    else if(event.key.keysym.sym == SDLK_6) mode = 6;
 
     else if(event.key.keysym.sym == SDLK_p) writePPMFile(window);
 

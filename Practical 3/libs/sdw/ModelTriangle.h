@@ -6,6 +6,8 @@ class ModelTriangle
 {
   public:
     glm::vec3 vertices[3];
+    glm::vec3 normals[3];
+    // glm::vec3 texturePoints;
     Colour colour;
 
     ModelTriangle()

@@ -128,6 +128,115 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, fl
   return ModelTriangles;
 }
 
+vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
+
+  std::ifstream ifs;
+  ifs.open (filename, ifstream::in);
+  assert (!ifs.fail( ));
+
+  vector<ModelTriangle> ModelTriangles;
+  vector<vec3> points;
+  vector<vec3> normals;
+
+  Colour newColour;
+  newColour.name = "red";
+  newColour.red = 255;
+  newColour.green = 0;
+  newColour.blue = 0;
+
+  while(!ifs.eof( )){
+    char point[256];
+    ifs.getline(point,256);
+    if(point[0] == 'v' && point[1] == ' '){
+      vec3 newPoint;
+      string pointString(point);
+      pointString = pointString.substr(3);
+
+      size_t found = pointString.find(" ");
+      newPoint.x = stof(pointString.substr(0,found))*scalingFactor;
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newPoint.y = stof(pointString.substr(0,found))*scalingFactor;
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newPoint.z = stof(pointString.substr(0,found))*scalingFactor;
+
+      points.push_back(newPoint);
+    }
+    if(point[0] == 'v' && point[1] == 'n'){
+      vec3 newNormal;
+      string pointString(point);
+      pointString = pointString.substr(4);
+
+      size_t found = pointString.find(" ");
+      newNormal.x = stof(pointString.substr(0,found));
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newNormal.y = stof(pointString.substr(0,found));
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newNormal.z = stof(pointString.substr(0,found));
+      normals.push_back(newNormal);
+    }
+    else if(point[0] == 'f'){
+      ModelTriangle newTriangle;
+      newTriangle.colour = newColour;
+      // point 1
+      string faceString(point);
+      faceString = faceString.substr(2);
+      size_t found = faceString.find("/");
+      int index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[0] = points[index - 1];
+      // texture 1
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      // normal 1
+      faceString = faceString.substr(found + 1);
+      found = faceString.find(" ");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.normals[0] = normals[index - 1];
+
+      // point 2
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[1] = points[index - 1];
+      // texture 2
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      // normal 2
+      faceString = faceString.substr(found + 1);
+      found = faceString.find(" ");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.normals[1] = normals[index - 1];
+
+      // point 3
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[2] = points[index - 1];
+      // texture 3
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      // normal 3
+      faceString = faceString.substr(found + 1);
+      found = faceString.find(" ");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.normals[2] = normals[index - 1];
+
+      ModelTriangles.push_back(newTriangle);
+    }
+  }
+  return ModelTriangles;
+}
+
 char*** readPPMPayload(string filename){
   std::ifstream ifs;
   ifs.open (filename, ifstream::in);
@@ -187,7 +296,7 @@ void writePPMFile(DrawingWindow window){
       // // cout << colour << endl;
       // std::string binaryColour = std::bitset<32>(colour).to_string();
       // int add = 0;
- 
+
       // char red = static_cast<char>(std::stoi(binaryColour.substr(8,8),0,2)+add);
       // char green = static_cast<char>(std::stoi(binaryColour.substr(16,8),0,2)+add);
       // char blue = static_cast<char>(std::stoi(binaryColour.substr(24),0,2)+add);

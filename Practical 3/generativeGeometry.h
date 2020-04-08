@@ -10,10 +10,10 @@ float RandomFloat(float a, float b);
 vector<ModelTriangle> generatePlane(int xs, int zs, int startx, int startz){
   vector<ModelTriangle> generatedTriangles;
   Colour newColour;
-  newColour.name = "white";
+  newColour.name = "red";
   newColour.red = 255;
-  newColour.green = 255;
-  newColour.blue = 255;
+  newColour.green = 0;
+  newColour.blue = 0;
   vector<vec3> points;
 
   // This creates the points
