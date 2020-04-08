@@ -40,6 +40,7 @@ vector<ModelTriangle> initialTriangles;
 vector<ModelTriangle> triangles;
 vector<Colour> materials;
 vector<ModelTriangle> sphere;
+vector<ModelTriangle> logo;
 
 int main(int argc, char* argv[])
 {
@@ -47,9 +48,12 @@ int main(int argc, char* argv[])
   initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
   triangles = initialTriangles;
   triangles = liftCubes(triangles);
-  sphere = readGeometrySphere("sphere.obj", 0.1);
   initialiseVelocities(materials);
   initialiseCORs(materials);
+
+  sphere = readGeometrySphere("sphere.obj", 0.1);
+  logo = readGeometryLogo("logo/logo.obj", 0.01);
+
   SDL_Event event;
   while(true)
   {
@@ -84,6 +88,11 @@ int main(int argc, char* argv[])
     }else if(mode == 6){
       //rasterise(window, sphere);
       raytrace(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), sphere);
+      mode = 0;
+      window.renderFrame();
+    }else if(mode == 7){
+      //rasterise(window, sphere);
+      raytrace(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo);
       mode = 0;
       window.renderFrame();
     }
@@ -179,6 +188,7 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_4) mode = 4;
     else if(event.key.keysym.sym == SDLK_5) mode = 5;
     else if(event.key.keysym.sym == SDLK_6) mode = 6;
+    else if(event.key.keysym.sym == SDLK_7) mode = 7;
 
     else if(event.key.keysym.sym == SDLK_p) writePPMFile(window);
 

@@ -237,6 +237,86 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
   return ModelTriangles;
 }
 
+vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
+
+  std::ifstream ifs;
+  ifs.open (filename, ifstream::in);
+  assert (!ifs.fail( ));
+
+  vector<ModelTriangle> ModelTriangles;
+  vector<vec3> points;
+  vector<vec3> normals;
+
+  Colour newColour;
+  newColour.name = "red";
+  newColour.red = 255;
+  newColour.green = 0;
+  newColour.blue = 0;
+
+  while(!ifs.eof( )){
+    char point[256];
+    ifs.getline(point,256);
+    if(point[0] == 'v' && point[1] == ' '){
+      vec3 newPoint;
+      string pointString(point);
+      pointString = pointString.substr(2);
+
+      size_t found = pointString.find(" ");
+      newPoint.x = stof(pointString.substr(0,found))*scalingFactor;
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newPoint.y = stof(pointString.substr(0,found))*scalingFactor;
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newPoint.z = stof(pointString.substr(0,found))*scalingFactor;
+      cout << newPoint.x << ", " << newPoint.y << ", " << newPoint.z << endl;
+      points.push_back(newPoint);
+    }
+    if(point[0] == 'v' && point[1] == 't'){
+
+    }
+    else if(point[0] == 'f'){
+      ModelTriangle newTriangle;
+      newTriangle.colour = newColour;
+      // point 1
+      string faceString(point);
+      faceString = faceString.substr(2);
+      size_t found = faceString.find("/");
+      int index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[0] = points[index - 1];
+      // texture 1
+      faceString = faceString.substr(found + 1);
+      found = faceString.find(" ");
+      index = stoi(faceString.substr(0,found));
+
+      // point 2
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[1] = points[index - 1];
+      // texture 2
+      faceString = faceString.substr(found + 1);
+      found = faceString.find(" ");
+      index = stoi(faceString.substr(0,found));
+
+      // point 3
+      faceString = faceString.substr(found + 1);
+      found = faceString.find("/");
+      index = stoi(faceString.substr(0,found));
+      newTriangle.vertices[2] = points[index - 1];
+      // texture 3
+      faceString = faceString.substr(found + 1);
+      found = faceString.find(" ");
+      index = stoi(faceString.substr(0,found));
+
+      ModelTriangles.push_back(newTriangle);
+    }
+  }
+  return ModelTriangles;
+}
+
 char*** readPPMPayload(string filename){
   std::ifstream ifs;
   ifs.open (filename, ifstream::in);
