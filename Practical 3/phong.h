@@ -5,17 +5,19 @@
 using namespace std;
 using namespace glm;
 
-void raytraceGouraud(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles);
-RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vector<ModelTriangle> triangles);
-float proximityLighting(RayTriangleIntersection RayTriangleIntersection, vec3 lightSource);
-float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource);
-bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j);
-vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles);
-void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource);
-float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel);
+void raytracePhong(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles);
+RayTriangleIntersection getClosestIntersectionPhong(vec3 cameraPosition, vec3 r, vector<ModelTriangle> triangles);
+float proximityLightingPhong(RayTriangleIntersection RayTriangleIntersection, vec3 lightSource);
+float angleOfIncidencePhong(RayTriangleIntersection rTI, vec3 lightSource);
+bool inHardShaddowPhong(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j);
+vector<ModelTriangle> removeTrianglePhong(ModelTriangle triangle, vector<ModelTriangle> triangles);
+void raytraceAntiAliasPhong(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource);
+float SpecularHighlightPhong(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel);
+vec3 findNormal(RayTriangleIntersection rTI);
+vec3 interpolateNormal(vec3 normal1, vec3 normal2, float distance);
 
 // RAYTRACE FUNCTIONS //////////////////////////////////////////////////////////
-void raytraceGouraud(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
+void raytracePhong(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
   float ambientLight = 0.2;
   float specIntensity = 0.2;
   int specPower = 10;
@@ -25,15 +27,15 @@ void raytraceGouraud(DrawingWindow window, vector<ModelTriangle> triangles, vec3
     for(int j = 0; j < HEIGHT - 1; j++){
       vec3 temp = vec3(i-(WIDTH/2),(HEIGHT/2)-j, -distanceOfImagePlaneFromCamera);
       vec3 r = normalize(temp * cameraRotation);
-      RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
+      RayTriangleIntersection intersection = getClosestIntersectionPhong(cameraPosition,r,visibleTriangles);
 
       if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-        float b = proximityLighting(intersection, lightSource);
-        float a = angleOfIncidence(intersection, lightSource);
-        float spec = SpecularHighlight(intersection, lightSource, r, specPower);
+        float b = proximityLightingPhong(intersection, lightSource);
+        float a = angleOfIncidencePhong(intersection, lightSource);
+        float spec = SpecularHighlightPhong(intersection, lightSource, r, specPower);
         // cout << spec << endl;
         float brightness = std::max((b * a) + (spec * specIntensity), ambientLight);
-        if(inHardShaddow(intersection, lightSource, triangles, i, j)){
+        if(inHardShaddowPhong(intersection, lightSource, triangles, i, j)){
           brightness = ambientLight;
         }
         Colour colour = intersection.intersectedTriangle.colour;
@@ -48,7 +50,7 @@ void raytraceGouraud(DrawingWindow window, vector<ModelTriangle> triangles, vec3
   cout << "done." << endl;
 }
 
-void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
+void raytraceAntiAliasPhong(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
   float ambientLight = 0.2;
   float specIntensity = 0.2;
   int specPower = 10;
@@ -99,7 +101,7 @@ void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, ve
 }
 
 // LIGHTING FUNCTIONS //////////////////////////////////////////////////////////
-float proximityLighting(RayTriangleIntersection rTI, vec3 lightSource){
+float proximityLightingPhong(RayTriangleIntersection rTI, vec3 lightSource){
   vec3 point = rTI.intersectionPoint;
   float distance = sqrt(pow((point.x - lightSource[0]),2) + pow((point.y - lightSource[1]),2) + pow((point.z - lightSource[2]),2));
   float inverseSquare = 50 / ( PI * pow(distance, 2));
@@ -111,10 +113,11 @@ float proximityLighting(RayTriangleIntersection rTI, vec3 lightSource){
   }
 }
 
-float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel){
+float SpecularHighlightPhong(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel){
 
   ModelTriangle triangle = rTI.intersectedTriangle;
-  vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
+  // vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
+  vec3 normal = findNormal(rTI);
   vec3 vecFromLight = normalize(rTI.intersectionPoint - lightSource);
   vec3 reflectedVec = vecFromLight - (2 * (dot(vecFromLight, normal)) * normal);
   vec3 rInverse = vec3(-r[0], -r[1], -r[2]);
@@ -125,13 +128,13 @@ float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, i
   else return 0;
 }
 
-bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j){
+bool inHardShaddowPhong(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j){
   vec3 point = rTI.intersectionPoint;
   ModelTriangle triangle = rTI.intersectedTriangle;
-  triangles = removeTriangle(triangle, triangles);
+  triangles = removeTrianglePhong(triangle, triangles);
   vec3 vecToLight = lightSource - point;
 
-  RayTriangleIntersection intersection = getClosestIntersection(point, normalize(vecToLight), triangles);
+  RayTriangleIntersection intersection = getClosestIntersectionPhong(point, normalize(vecToLight), triangles);
   float distanceToLight = sqrt(pow(vecToLight[0],2) + pow(vecToLight[1],2) + pow(vecToLight[2],2));
 
   if(intersection.distanceFromCamera == std::numeric_limits<float>::infinity()) return false;
@@ -140,7 +143,7 @@ bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTr
 }
 
 // HELPER FUNCTIONS ////////////////////////////////////////////////////////////
-RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vector<ModelTriangle> triangles){
+RayTriangleIntersection getClosestIntersectionPhong(vec3 cameraPosition, vec3 r, vector<ModelTriangle> triangles){
   vec3 bestSolution = vec3(std::numeric_limits<float>::infinity(),0,0);
   ModelTriangle bestTri;
   int trianglessize = triangles.size();
@@ -169,9 +172,10 @@ RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vect
   return result;
 }
 
-float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource){
+float angleOfIncidencePhong(RayTriangleIntersection rTI, vec3 lightSource){
   ModelTriangle triangle = rTI.intersectedTriangle;
-  vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
+  // vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
+  vec3 normal = findNormal(rTI);
   vec3 vecToLight = normalize(lightSource - rTI.intersectionPoint);
   float angleOfIncidence = dot(normal, vecToLight);
   if(angleOfIncidence > 0){
@@ -181,7 +185,7 @@ float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource){
   }
 }
 
-vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles){
+vector<ModelTriangle> removeTrianglePhong(ModelTriangle triangle, vector<ModelTriangle> triangles){
   bool remove = false;
   int index = 100000;
   for(int i = 0; i < (int) triangles.size(); i++){
@@ -194,10 +198,21 @@ vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangl
   return triangles;
 }
 
-vec3 interpolateNormals(RayTriangleIntersection rTI){
+vec3 findNormal(RayTriangleIntersection rTI){
+  // u = p0 -> p1
+  // v = p0 -> p2
   float u = rTI.intersectionPoint.y;
   float v = rTI.intersectionPoint.z;
-  normal1 = rTI.intersectedTriangle.normals[0];
-  normal2 = rTI.intersectedTriangle.normals[1];
-  normal3 = rTI.intersectedTriangle.normals[2];
+  vec3 normal1 = rTI.intersectedTriangle.normals[0];
+  vec3 normal2 = rTI.intersectedTriangle.normals[1];
+  vec3 normal3 = rTI.intersectedTriangle.normals[2];
+  vec3 normal = normal1 + (u*(normal2 - normal1)) + (v*(normal3 - normal1));
+  cout << u << ", " << v << "/ "<< normal1.x << ", " << normal2.x << ", " << normal3.x << " -> " << normal.x << endl;
+  return normalize(normal);
 }
+
+// vec3 interpolateNormal(vec3 normal1, vec3 normal2, float distance){
+//   float step = std::max({abs(normal1.x - normal2.x), abs(normal1.y - normal2.x), abs(normal1.z - normal2.z)});
+//
+//   return normal1;
+// }

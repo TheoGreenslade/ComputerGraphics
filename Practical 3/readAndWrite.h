@@ -271,7 +271,6 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
 
       found = pointString.find(" ");
       newPoint.z = stof(pointString.substr(0,found))*scalingFactor;
-      cout << newPoint.x << ", " << newPoint.y << ", " << newPoint.z << endl;
       points.push_back(newPoint);
     }
     if(point[0] == 'v' && point[1] == 't'){
