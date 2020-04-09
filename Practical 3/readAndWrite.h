@@ -137,6 +137,7 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
   vector<ModelTriangle> ModelTriangles;
   vector<vec3> points;
   vector<vec3> normals;
+  vector<vec2> texturePoints;
 
   Colour newColour;
   newColour.name = "red";
@@ -165,7 +166,7 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
 
       points.push_back(newPoint);
     }
-    if(point[0] == 'v' && point[1] == 'n'){
+    else if(point[0] == 'v' && point[1] == 'n'){
       vec3 newNormal;
       string pointString(point);
       pointString = pointString.substr(4);
@@ -182,6 +183,19 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
       newNormal.z = stof(pointString.substr(0,found));
       normals.push_back(newNormal);
     }
+    else if(point[0] == 'v' && point[1] == 't'){
+      vec2 newTexturePoint;
+      string pointString(point);
+      pointString = pointString.substr(4);
+
+      size_t found = pointString.find(" ");
+      newTexturePoint.x = stof(pointString.substr(0,found));
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newTexturePoint.y = stof(pointString.substr(0,found));
+      texturePoints.push_back(newTexturePoint);
+    }
     else if(point[0] == 'f'){
       ModelTriangle newTriangle;
       newTriangle.colour = newColour;
@@ -195,6 +209,7 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
       faceString = faceString.substr(found + 1);
       found = faceString.find("/");
       index = stoi(faceString.substr(0,found));
+      newTriangle.texturePoints[0] = texturePoints[index -1];
       // normal 1
       faceString = faceString.substr(found + 1);
       found = faceString.find(" ");
@@ -210,6 +225,7 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
       faceString = faceString.substr(found + 1);
       found = faceString.find("/");
       index = stoi(faceString.substr(0,found));
+      newTriangle.texturePoints[1] = texturePoints[index -1];
       // normal 2
       faceString = faceString.substr(found + 1);
       found = faceString.find(" ");
@@ -225,12 +241,13 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
       faceString = faceString.substr(found + 1);
       found = faceString.find("/");
       index = stoi(faceString.substr(0,found));
+      newTriangle.texturePoints[2] = texturePoints[index -1];
       // normal 3
       faceString = faceString.substr(found + 1);
       found = faceString.find(" ");
       index = stoi(faceString.substr(0,found));
       newTriangle.normals[2] = normals[index - 1];
-
+      
       ModelTriangles.push_back(newTriangle);
     }
   }
@@ -246,6 +263,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
   vector<ModelTriangle> ModelTriangles;
   vector<vec3> points;
   vector<vec3> normals;
+  vector<vec2> texturePoints;
 
   Colour newColour;
   newColour.name = "red";
@@ -274,7 +292,17 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       points.push_back(newPoint);
     }
     if(point[0] == 'v' && point[1] == 't'){
+      vec2 newTexturePoint;
+      string pointString(point);
+      pointString = pointString.substr(3);
 
+      size_t found = pointString.find(" ");
+      newTexturePoint.x = stof(pointString.substr(0,found));
+      pointString = pointString.substr(found+1);
+
+      found = pointString.find(" ");
+      newTexturePoint.y = stof(pointString.substr(0,found));
+      texturePoints.push_back(newTexturePoint);
     }
     else if(point[0] == 'f'){
       ModelTriangle newTriangle;
@@ -289,6 +317,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       faceString = faceString.substr(found + 1);
       found = faceString.find(" ");
       index = stoi(faceString.substr(0,found));
+      newTriangle.texturePoints[0] = texturePoints[index -1];
 
       // point 2
       faceString = faceString.substr(found + 1);
@@ -299,6 +328,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       faceString = faceString.substr(found + 1);
       found = faceString.find(" ");
       index = stoi(faceString.substr(0,found));
+      newTriangle.texturePoints[1] = texturePoints[index -1];
 
       // point 3
       faceString = faceString.substr(found + 1);
@@ -309,7 +339,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       faceString = faceString.substr(found + 1);
       found = faceString.find(" ");
       index = stoi(faceString.substr(0,found));
-
+      newTriangle.texturePoints[2] = texturePoints[index -1];
       ModelTriangles.push_back(newTriangle);
     }
   }
