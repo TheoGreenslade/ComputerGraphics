@@ -17,6 +17,7 @@
 #include "generativeGeometry.h"
 #include "culling.h"
 #include "physics.h"
+#include "gouraud.h"
 #include "phong.h"
 
 using namespace std;
@@ -88,7 +89,7 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 6){
       //rasterise(window, sphere);
-      raytracePhong(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(-2, 4, 3), sphere);
+      raytraceGouraud(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(-2, 4, 3), sphere);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
