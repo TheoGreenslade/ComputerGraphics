@@ -94,7 +94,8 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 7){
       //rasterise(window, sphere);
-      raytrace(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo);
+      char*** logoTexture = readPPMPayload("logo/texture.ppm");
+      raytraceTextures(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo, logoTexture);
       mode = 0;
       window.renderFrame();
     }

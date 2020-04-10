@@ -9,6 +9,7 @@ void drawTextureTriangleFlatBottom(DrawingWindow window, CanvasTriangle triangle
 void drawTextureTriangleFlatTop(DrawingWindow window, CanvasTriangle triangle, string filename);
 void drawTextureTriangleFlatTop(DrawingWindow window, CanvasTriangle triangle, string filename);
 float* interpolate(float start, float end, int steps);
+uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, char*** texture, float brightness);
 
 void drawTextureTriangle(DrawingWindow window, CanvasTriangle triangle, string filename){
   if (triangle.vertices[0].y > triangle.vertices[1].y){
@@ -125,4 +126,29 @@ float* interpolate(float start, float end, int steps){
     result[i] = start + (step*i);
   }
   return result;
+}
+
+uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, char*** texture, float brightness){
+  vec2 texturePoint0 = intersection.intersectedTriangle.texturePoints[0];
+  vec2 texturePoint1 = intersection.intersectedTriangle.texturePoints[1];
+  vec2 texturePoint2 = intersection.intersectedTriangle.texturePoints[2];
+  vec2 texturePixel = texturePoint0 + (intersection.u * (texturePoint1-texturePoint0)) + (intersection.v * (texturePoint2-texturePoint0));
+
+  int red = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][0];
+  int green = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][1];
+  int blue = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][2];
+  if (red < 0){
+    red = red + 255;
+  }
+  if (green < 0){
+    green = green + 255;
+  }
+  if (blue < 0){
+    blue = blue + 255;
+  }
+  red = red * brightness;
+  green = green * brightness;
+  blue = blue * brightness;
+  uint32_t pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
+  return pixel_colour;
 }

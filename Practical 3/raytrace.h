@@ -13,12 +13,16 @@ bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTr
 vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles);
 void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource);
 float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel);
+void raytraceTextures(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles, char*** texture);
+float calcualteBrightness(RayTriangleIntersection intersection, vec3 lightSource, vec3 r, int i, int j,vector<ModelTriangle> triangles);
+// uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, char*** texture, float brightness);
+
+float ambientLight = 0.2;
+float specIntensity = 0.2;
+int specPower = 10;
 
 // RAYTRACE FUNCTIONS //////////////////////////////////////////////////////////
 void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
-  float ambientLight = 0.2;
-  float specIntensity = 0.2;
-  int specPower = 10;
   cout << "Raytracing..." << endl;
 
   for(int i = 0; i < WIDTH - 1; i++){
@@ -28,14 +32,7 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
       RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
 
       if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-        float b = proximityLighting(intersection, lightSource);
-        float a = angleOfIncidence(intersection, lightSource);
-        float spec = SpecularHighlight(intersection, lightSource, r, specPower);
-        // cout << spec << endl;
-        float brightness = std::max((b * a) + (spec * specIntensity), ambientLight);
-        if(inHardShaddow(intersection, lightSource, triangles, i, j)){
-          brightness = ambientLight;
-        }
+        float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
         Colour colour = intersection.intersectedTriangle.colour;
         int red = colour.red * brightness;
         int green = colour.green * brightness;
@@ -49,9 +46,6 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
 }
 
 void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
-  float ambientLight = 0.2;
-  float specIntensity = 0.2;
-  int specPower = 10;
   cout << "Raytracing..." << endl;
 
   for(int i = 0; i < WIDTH - 1; i++){
@@ -73,13 +67,7 @@ void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, ve
           RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,triangles);
 
           if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-            float b = proximityLighting(intersection, lightSource);
-            float a = angleOfIncidence(intersection, lightSource);
-            float spec = SpecularHighlight(intersection, lightSource, r, specPower);
-            float brightness = std::max((b * a) + (spec * specIntensity), ambientLight);
-            if(inHardShaddow(intersection, lightSource, triangles, i, j)){
-              brightness = ambientLight;
-            }
+            float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
             Colour colour = intersection.intersectedTriangle.colour;
             int red = colour.red * brightness;
             int green = colour.green * brightness;
@@ -166,6 +154,8 @@ RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vect
 
   vec3 intersectionPoint = bestTri.vertices[0] + bestSolution[1]*(bestTri.vertices[1]-bestTri.vertices[0]) + bestSolution[2]*(bestTri.vertices[2]-bestTri.vertices[0]);
   RayTriangleIntersection result = RayTriangleIntersection(intersectionPoint, abs(bestSolution[0]), bestTri);
+  result.u = bestSolution[1];
+  result.v = bestSolution[2];
   return result;
 }
 
@@ -192,4 +182,35 @@ vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangl
   }
   if(remove) triangles.erase(triangles.begin()+index);
   return triangles;
+}
+
+void raytraceTextures(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles, char*** texture){
+  cout << "Raytracing..." << endl;
+
+  for(int i = 0; i < WIDTH - 1; i++){
+    for(int j = 0; j < HEIGHT - 1; j++){
+      vec3 temp = vec3(i-(WIDTH/2),(HEIGHT/2)-j, -distanceOfImagePlaneFromCamera);
+      vec3 r = normalize(temp * cameraRotation);
+      RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
+
+      if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
+        float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
+        uint32_t pixel_colour = calculateTexturePixelColour(intersection, texture, brightness);
+        window.setPixelColour(i, j, pixel_colour);
+      }
+    }
+  }
+  cout << "done." << endl;
+
+}
+
+float calcualteBrightness(RayTriangleIntersection intersection, vec3 lightSource, vec3 r, int i, int j,vector<ModelTriangle> triangles){
+  float b = proximityLighting(intersection, lightSource);
+  float a = angleOfIncidence(intersection, lightSource);
+  float spec = SpecularHighlight(intersection, lightSource, r, specPower);
+  float brightness = std::max((b * a) + (spec * specIntensity), ambientLight);
+  if(inHardShaddow(intersection, lightSource, triangles, i, j)){
+    brightness = ambientLight;
+  }
+  return brightness;
 }
