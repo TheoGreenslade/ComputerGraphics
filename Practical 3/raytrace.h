@@ -229,11 +229,11 @@ float softShadow(float brightness, RayTriangleIntersection intersection, vec3 li
 
   vec3 raisedPoint = intersection.intersectionPoint + shiftVector;
   RayTriangleIntersection raisedIntersection = RayTriangleIntersection(raisedPoint,intersection.distanceFromCamera, intersection.intersectedTriangle);
-  bool raisedPointInHardShadow = inHardShaddow(raisedIntersection,lightSource,triangles,i,j);
+  bool raisedPointInHardShadow = inShaddow(raisedIntersection,lightSource,triangles,i,j);
 
   vec3 loweredPoint = intersection.intersectionPoint - shiftVector;
   RayTriangleIntersection loweredIntersection = RayTriangleIntersection(loweredPoint,intersection.distanceFromCamera, intersection.intersectedTriangle);
-  bool loweredPointInHardShadow = inHardShaddow(loweredIntersection,lightSource,triangles,i,j);
+  bool loweredPointInHardShadow = inShaddow(loweredIntersection,lightSource,triangles,i,j);
 
   vec3 step = scaleVector(normal,stepScale);
 
@@ -261,7 +261,7 @@ bool inShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriang
   ModelTriangle triangle = rTI.intersectedTriangle;
   triangles = removeTriangle(triangle, triangles);
   vec3 vecToLight = lightSource - point;
-  point = rTI.intersectionPoint + scaleVector(vecToLight,0.1);
+  point = rTI.intersectionPoint + scaleVector(vecToLight,0.08);
 
   RayTriangleIntersection intersection = getClosestIntersection(point, normalize(vecToLight), triangles);
   float distanceToLight = sqrt(pow(vecToLight[0],2) + pow(vecToLight[1],2) + pow(vecToLight[2],2));
