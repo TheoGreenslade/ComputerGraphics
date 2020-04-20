@@ -8,6 +8,7 @@
 #include <vector>
 #include <math.h>
 #include <algorithm>
+#include <BoundingBox.h>
 
 #include "projectTriangles.h"
 #include "readAndWrite.h"
@@ -19,6 +20,7 @@
 #include "physics.h"
 #include "gouraud.h"
 #include "phong.h"
+#include "clipping.h"
 
 using namespace std;
 using namespace glm;
@@ -64,6 +66,7 @@ int main(int argc, char* argv[])
     initialiseWindow(window);
     triangles = gravity(triangles, velocities,materials);
     vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
+    visibleTriangles = clipTriangles(visibleTriangles,cameraPosition,cameraRotation,distanceOfImagePlaneFromCamera);
     // cout << visibleTriangles.size() << endl;
     if(mode == 1){
       wireframe(window, triangles);
@@ -82,7 +85,7 @@ int main(int argc, char* argv[])
       mode = 0;
       window.renderFrame();
     }else if(mode == 5){
-      vector<ModelTriangle> plane = generatePlane(5, 5, -2.5, -5);
+      vector<ModelTriangle> plane = generatePlane(5, 5, -2, -5);
       //vector<ModelTriangle> visibleTriangles = cullTriangles(plane, cameraPosition);
       raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane);
       mode = 0;
