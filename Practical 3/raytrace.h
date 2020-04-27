@@ -301,10 +301,10 @@ void raytraceMirrors(DrawingWindow window, vector<ModelTriangle> triangles, vec3
       if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
         uint32_t pixel_colour;
 
-        if (intersection.intersectedTriangle.colour.name == "Grey"){
+        if (intersection.intersectedTriangle.reflect){
           pixel_colour = reflectionColour(intersection,r,triangles,lightSource,i,j);
           // pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
-        } else{
+        } else {
           float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
           Colour colour = intersection.intersectedTriangle.colour;
           int red = colour.red * brightness;
@@ -328,7 +328,7 @@ uint32_t reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri,
   uint32_t pixel_colour;
 
   if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-    if (intersection.intersectedTriangle.colour.name == "Grey"){
+    if (intersection.intersectedTriangle.reflect){
       pixel_colour = reflectionColour(intersection,Rr,triangles,lightSource,i,j);
       // pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
     } else{

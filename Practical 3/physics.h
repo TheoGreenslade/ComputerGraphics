@@ -23,7 +23,7 @@ vector<ModelTriangle> gravity(vector<ModelTriangle> triangles,vector<float> velo
     for (int i = 0; i < numOfTri; i++){
         ModelTriangle triangle = triangles[i];
 
-        if((triangle.colour.name == "Red") || (triangle.colour.name == "Blue")){
+        if(triangle.fall){
             int index = 0;
             int numOfMaterials = materials.size();
             for (int k = 0; k < numOfMaterials; k++){

@@ -21,6 +21,7 @@
 #include "gouraud.h"
 #include "phong.h"
 #include "clipping.h"
+#include "initialise.h"
 
 using namespace std;
 using namespace glm;
@@ -50,6 +51,8 @@ int main(int argc, char* argv[])
 {
   materials = readMaterials("cornell-box/cornell-box.mtl");
   initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
+  initialTriangles = initialiseMirrors(initialTriangles);
+  initialTriangles = initialiseGravity(initialTriangles);
   triangles = initialTriangles;
   triangles = liftCubes(triangles);
   initialiseVelocities(materials);
