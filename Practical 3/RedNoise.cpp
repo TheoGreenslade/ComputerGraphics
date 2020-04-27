@@ -101,6 +101,10 @@ int main(int argc, char* argv[])
       raytraceTextures(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo, logoTexture);
       mode = 0;
       window.renderFrame();
+    }else if (mode == 8){
+      raytraceMirrors(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
+      mode = 0;
+      window.renderFrame();
     }
   }
 }
@@ -195,6 +199,7 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_5) mode = 5;
     else if(event.key.keysym.sym == SDLK_6) mode = 6;
     else if(event.key.keysym.sym == SDLK_7) mode = 7;
+    else if(event.key.keysym.sym == SDLK_8) mode = 8;
 
     else if(event.key.keysym.sym == SDLK_p) writePPMFile(window);
 
