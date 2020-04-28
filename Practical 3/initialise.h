@@ -12,7 +12,7 @@ vector<ModelTriangle> initialiseMirrors (vector<ModelTriangle> triangles){
   vector<ModelTriangle> newTriangles;
   for (int i = 0; i <NumOfTri; i++){
     ModelTriangle triangle = triangles[i];
-    if (triangle.colour.name == "Grey"){
+    if (triangle.colour.name == "Blue"){
       triangle.reflect = true;
     }
     newTriangles.push_back(triangle);

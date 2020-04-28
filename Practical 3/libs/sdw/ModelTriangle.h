@@ -12,6 +12,7 @@ class ModelTriangle
     char shading;
     bool reflect = false;
     bool fall = false;
+    bool textured = false;
 
     ModelTriangle()
     {

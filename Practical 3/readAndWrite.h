@@ -343,6 +343,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       index = stoi(faceString.substr(0,found));
       newTriangle.texturePoints[2] = texturePoints[index -1];
       newTriangle.shading = 'N';
+      newTriangle.textured = true;
       ModelTriangles.push_back(newTriangle);
     }
   }

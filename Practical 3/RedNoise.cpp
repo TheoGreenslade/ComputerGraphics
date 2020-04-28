@@ -93,7 +93,10 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 6){
       sphere.insert(sphere.end(), triangles.begin(), triangles.end());
-      raytrace(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, sphere);
+      // sphere.insert(sphere.end(), logo.begin(), logo.end());
+      vector<ModelTriangle> visible_sphere = cullTriangles(sphere,cameraPosition);
+      cout << sphere.size() << "," << visible_sphere.size() << endl;
+      raytrace(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visible_sphere);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
@@ -102,12 +105,17 @@ int main(int argc, char* argv[])
       raytraceTextures(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo, logoTexture);
       mode = 0;
       window.renderFrame();
+    }else if (mode == 8){
+      vector<ModelTriangle> allTriangles;
+      // allTriangles.reserve(sphere.size() + triangles.size());
+      // allTriangles.insert(allTriangles.end(),sphere.begin(),sphere.end());
+      // allTriangles.insert(allTriangles.end(),triangles.begin(),triangles.end());
+      // sphere.insert(sphere.end(), triangles.begin(), triangles.end());
+      triangles.insert(triangles.end(),sphere.begin(),sphere.end());
+      raytraceMirrors(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, triangles);
+      mode = 0;
+      window.renderFrame();
     }
-    // }else if (mode == 8){
-    //   raytraceMirrors(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
-    //   mode = 0;
-    //   window.renderFrame();
-    // }
   }
 }
 
