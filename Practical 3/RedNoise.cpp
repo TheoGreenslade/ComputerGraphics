@@ -18,8 +18,6 @@
 #include "generativeGeometry.h"
 #include "culling.h"
 #include "physics.h"
-#include "gouraud.h"
-#include "phong.h"
 #include "clipping.h"
 #include "initialise.h"
 
@@ -58,7 +56,7 @@ int main(int argc, char* argv[])
   initialiseVelocities(materials);
   initialiseCORs(materials);
 
-  sphere = readGeometrySphere("sphere.obj", 0.1);
+  sphere = readGeometrySphere("sphere.obj", 0.05);
   logo = readGeometryLogo("logo/logo.obj", 0.01);
 
   SDL_Event event;
@@ -94,8 +92,8 @@ int main(int argc, char* argv[])
       mode = 0;
       window.renderFrame();
     }else if(mode == 6){
-      //rasterise(window, sphere);
-      raytraceGouraud(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(-2, 4, 3), sphere);
+      sphere.insert(sphere.end(), triangles.begin(), triangles.end());
+      raytrace(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, sphere);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
@@ -104,11 +102,12 @@ int main(int argc, char* argv[])
       raytraceTextures(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo, logoTexture);
       mode = 0;
       window.renderFrame();
-    }else if (mode == 8){
-      raytraceMirrors(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
-      mode = 0;
-      window.renderFrame();
     }
+    // }else if (mode == 8){
+    //   raytraceMirrors(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
+    //   mode = 0;
+    //   window.renderFrame();
+    // }
   }
 }
 

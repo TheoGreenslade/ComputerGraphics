@@ -9,6 +9,7 @@ class ModelTriangle
     glm::vec3 normals[3];
     glm::vec2 texturePoints[3];
     Colour colour;
+    char shading;
     bool reflect = false;
     bool fall = false;
 

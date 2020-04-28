@@ -121,6 +121,7 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, fl
       newTriangle.vertices[2] = points[index - 1];
 
       ifs.getline(point,256);
+      newTriangle.shading = 'N';
       ModelTriangles.push_back(newTriangle);
     }
 
@@ -247,7 +248,8 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
       found = faceString.find(" ");
       index = stoi(faceString.substr(0,found));
       newTriangle.normals[2] = normals[index - 1];
-      
+
+      newTriangle.shading = 'P';
       ModelTriangles.push_back(newTriangle);
     }
   }
@@ -340,6 +342,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       found = faceString.find(" ");
       index = stoi(faceString.substr(0,found));
       newTriangle.texturePoints[2] = texturePoints[index -1];
+      newTriangle.shading = 'N';
       ModelTriangles.push_back(newTriangle);
     }
   }

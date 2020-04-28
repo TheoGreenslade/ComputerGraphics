@@ -19,9 +19,7 @@ float softShadow(float brightness, RayTriangleIntersection intersection, vec3 li
 vec3 scaleVector(vec3 normal, float scaleFactor);
 bool inShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j);
 float calculateBrightnessScaler(RayTriangleIntersection intersection, vec3 shiftVector, vec3 step, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j, float stepScale, float maxShift);
-void raytraceMirrors(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles);
-uint32_t reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j);
-vec3 calculateVectorOfReflection(RayTriangleIntersection intersection, vec3 Ri);
+vec3 findNormal(RayTriangleIntersection rTI);
 
 float ambientLight = 0.2;
 float specIntensity = 0.2;
@@ -106,10 +104,22 @@ float proximityLighting(RayTriangleIntersection rTI, vec3 lightSource){
   }
 }
 
+float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource){
+  ModelTriangle triangle = rTI.intersectedTriangle;
+  vec3 normal = findNormal(rTI);
+  vec3 vecToLight = normalize(lightSource - rTI.intersectionPoint);
+  float angleOfIncidence = dot(normal, vecToLight);
+  if(angleOfIncidence > 0){
+    return angleOfIncidence;
+  }else{
+    return 0;
+  }
+}
+
 float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel){
 
   ModelTriangle triangle = rTI.intersectedTriangle;
-  vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
+  vec3 normal = findNormal(rTI);
   vec3 vecFromLight = normalize(rTI.intersectionPoint - lightSource);
   vec3 reflectedVec = vecFromLight - (2 * (dot(vecFromLight, normal)) * normal);
   vec3 rInverse = vec3(-r[0], -r[1], -r[2]);
@@ -132,6 +142,77 @@ bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTr
   if(intersection.distanceFromCamera == std::numeric_limits<float>::infinity()) return false;
   else if(distanceToLight > abs(intersection.distanceFromCamera)) return true;
   else return false;
+}
+
+float softShadow(float brightness, RayTriangleIntersection intersection, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j){
+  float maxShift = 0.1;
+  float stepScale = 0.01;
+  ModelTriangle triangle = intersection.intersectedTriangle;
+  vec3 normal = findNormal(intersection);
+  vec3 shiftVector = scaleVector(normal,maxShift);
+  vec3 raisedPoint = intersection.intersectionPoint + shiftVector;
+  RayTriangleIntersection raisedIntersection = RayTriangleIntersection(raisedPoint,intersection.distanceFromCamera, intersection.intersectedTriangle);
+  bool raisedPointInHardShadow = inShaddow(raisedIntersection,lightSource,triangles,i,j);
+
+  vec3 loweredPoint = intersection.intersectionPoint - shiftVector;
+  RayTriangleIntersection loweredIntersection = RayTriangleIntersection(loweredPoint,intersection.distanceFromCamera, intersection.intersectedTriangle);
+  bool loweredPointInHardShadow = inShaddow(loweredIntersection,lightSource,triangles,i,j);
+
+  vec3 step = scaleVector(normal,stepScale);
+
+  if (raisedPointInHardShadow && loweredPointInHardShadow){
+    brightness = ambientLight;
+
+  } else if (loweredPointInHardShadow){
+    float scale = calculateBrightnessScaler(intersection,scaleVector(shiftVector,-1),step,lightSource,triangles,i,j,stepScale,maxShift);
+    brightness = brightness * scale;
+
+  } else if (raisedPointInHardShadow){
+    float scale = calculateBrightnessScaler(intersection,shiftVector,scaleVector(step,-1),lightSource,triangles,i,j,stepScale,maxShift);
+    brightness = brightness * scale;
+  }
+  return std::max(brightness,ambientLight);
+}
+
+bool inShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j){
+  vec3 point = rTI.intersectionPoint;
+  ModelTriangle triangle = rTI.intersectedTriangle;
+  triangles = removeTriangle(triangle, triangles);
+  vec3 vecToLight = lightSource - point;
+  point = rTI.intersectionPoint + scaleVector(vecToLight,0.08);
+
+  RayTriangleIntersection intersection = getClosestIntersection(point, normalize(vecToLight), triangles);
+  float distanceToLight = sqrt(pow(vecToLight[0],2) + pow(vecToLight[1],2) + pow(vecToLight[2],2));
+
+  if(intersection.distanceFromCamera == std::numeric_limits<float>::infinity()) return false;
+  else if(distanceToLight > abs(intersection.distanceFromCamera)) return true;
+  else return false;
+}
+
+float calcualteBrightness(RayTriangleIntersection intersection, vec3 lightSource, vec3 r, int i, int j,vector<ModelTriangle> triangles){
+  float b = proximityLighting(intersection, lightSource);
+  float a = angleOfIncidence(intersection, lightSource);
+  float spec = SpecularHighlight(intersection, lightSource, r, specPower);
+  float brightness = std::max((b * a) + (spec * specIntensity), ambientLight);
+  // if(inHardShaddow(intersection, lightSource, triangles, i, j)){
+  //   brightness = ambientLight;
+  // }
+  brightness = softShadow(brightness,intersection,lightSource,triangles,i,j);
+  return brightness;
+}
+
+float calculateBrightnessScaler(RayTriangleIntersection intersection, vec3 shiftVector, vec3 step, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j, float stepScale, float maxShift){
+  int count = 0;
+  vec3 point = intersection.intersectionPoint + shiftVector;
+  RayTriangleIntersection pointIntersection = RayTriangleIntersection(point,intersection.distanceFromCamera, intersection.intersectedTriangle);
+
+  while (inShaddow(pointIntersection,lightSource,triangles,i,j)){
+      point = point + step;
+      pointIntersection = RayTriangleIntersection(point,intersection.distanceFromCamera, intersection.intersectedTriangle);
+      count++;
+  }
+  float scale = std::min(1 - ((count*stepScale)/(2*maxShift)) ,1.0f);
+  return scale;
 }
 
 // HELPER FUNCTIONS ////////////////////////////////////////////////////////////
@@ -166,18 +247,6 @@ RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vect
   return result;
 }
 
-float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource){
-  ModelTriangle triangle = rTI.intersectedTriangle;
-  vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
-  vec3 vecToLight = normalize(lightSource - rTI.intersectionPoint);
-  float angleOfIncidence = dot(normal, vecToLight);
-  if(angleOfIncidence > 0){
-    return angleOfIncidence;
-  }else{
-    return 0;
-  }
-}
-
 vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles){
   bool remove = false;
   int index = 100000;
@@ -208,50 +277,6 @@ void raytraceTextures(DrawingWindow window, vector<ModelTriangle> triangles, vec
     }
   }
   cout << "done." << endl;
-
-}
-
-float calcualteBrightness(RayTriangleIntersection intersection, vec3 lightSource, vec3 r, int i, int j,vector<ModelTriangle> triangles){
-  float b = proximityLighting(intersection, lightSource);
-  float a = angleOfIncidence(intersection, lightSource);
-  float spec = SpecularHighlight(intersection, lightSource, r, specPower);
-  float brightness = std::max((b * a) + (spec * specIntensity), ambientLight);
-  // if(inHardShaddow(intersection, lightSource, triangles, i, j)){
-  //   brightness = ambientLight;
-  // }
-  brightness = softShadow(brightness,intersection,lightSource,triangles,i,j);
-  return brightness;
-}
-
-float softShadow(float brightness, RayTriangleIntersection intersection, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j){
-  float maxShift = 0.1;
-  float stepScale = 0.01;
-  ModelTriangle triangle = intersection.intersectedTriangle;
-  vec3 normal = normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
-  vec3 shiftVector = scaleVector(normal,maxShift);
-
-  vec3 raisedPoint = intersection.intersectionPoint + shiftVector;
-  RayTriangleIntersection raisedIntersection = RayTriangleIntersection(raisedPoint,intersection.distanceFromCamera, intersection.intersectedTriangle);
-  bool raisedPointInHardShadow = inShaddow(raisedIntersection,lightSource,triangles,i,j);
-
-  vec3 loweredPoint = intersection.intersectionPoint - shiftVector;
-  RayTriangleIntersection loweredIntersection = RayTriangleIntersection(loweredPoint,intersection.distanceFromCamera, intersection.intersectedTriangle);
-  bool loweredPointInHardShadow = inShaddow(loweredIntersection,lightSource,triangles,i,j);
-
-  vec3 step = scaleVector(normal,stepScale);
-
-  if (raisedPointInHardShadow && loweredPointInHardShadow){
-    brightness = ambientLight;
-
-  } else if (loweredPointInHardShadow){
-    float scale = calculateBrightnessScaler(intersection,scaleVector(shiftVector,-1),step,lightSource,triangles,i,j,stepScale,maxShift);
-    brightness = brightness * scale;
-
-  } else if (raisedPointInHardShadow){
-    float scale = calculateBrightnessScaler(intersection,shiftVector,scaleVector(step,-1),lightSource,triangles,i,j,stepScale,maxShift);
-    brightness = brightness * scale;
-  }
-  return std::max(brightness,ambientLight);
 }
 
 vec3 scaleVector(vec3 normal, float scaleFactor){
@@ -259,98 +284,19 @@ vec3 scaleVector(vec3 normal, float scaleFactor){
   return scaledVector;
 }
 
-bool inShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j){
-  vec3 point = rTI.intersectionPoint;
+vec3 findNormal(RayTriangleIntersection rTI){
   ModelTriangle triangle = rTI.intersectedTriangle;
-  triangles = removeTriangle(triangle, triangles);
-  vec3 vecToLight = lightSource - point;
-  point = rTI.intersectionPoint + scaleVector(vecToLight,0.08);
-
-  RayTriangleIntersection intersection = getClosestIntersection(point, normalize(vecToLight), triangles);
-  float distanceToLight = sqrt(pow(vecToLight[0],2) + pow(vecToLight[1],2) + pow(vecToLight[2],2));
-
-  if(intersection.distanceFromCamera == std::numeric_limits<float>::infinity()) return false;
-  else if(distanceToLight > abs(intersection.distanceFromCamera)) return true;
-  else return false;
-}
-
-float calculateBrightnessScaler(RayTriangleIntersection intersection, vec3 shiftVector, vec3 step, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j, float stepScale, float maxShift){
-  int count = 0;
-  vec3 point = intersection.intersectionPoint + shiftVector;
-  RayTriangleIntersection pointIntersection = RayTriangleIntersection(point,intersection.distanceFromCamera, intersection.intersectedTriangle);
-  
-  while (inShaddow(pointIntersection,lightSource,triangles,i,j)){
-      point = point + step;
-      pointIntersection = RayTriangleIntersection(point,intersection.distanceFromCamera, intersection.intersectedTriangle);
-      count++;
+  vec3 normal;
+  if(triangle.shading == 'N'){
+    normal = cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]);
   }
-  float scale = std::min(1 - ((count*stepScale)/(2*maxShift)) ,1.0f);
-  return scale;
-}
-
-void raytraceMirrors(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
-  cout << "Raytracing..." << endl;
-
-  for(int i = 0; i < WIDTH - 1; i++){
-    for(int j = 0; j < HEIGHT - 1; j++){
-      // cout << i << "," << j << endl;
-      vec3 temp = vec3(i-(WIDTH/2),(HEIGHT/2)-j, -distanceOfImagePlaneFromCamera);
-      vec3 r = normalize(temp * cameraRotation);
-      RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
-
-      if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-        uint32_t pixel_colour;
-
-        if (intersection.intersectedTriangle.reflect){
-          pixel_colour = reflectionColour(intersection,r,triangles,lightSource,i,j);
-          // pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
-        } else {
-          float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
-          Colour colour = intersection.intersectedTriangle.colour;
-          int red = colour.red * brightness;
-          int green = colour.green * brightness;
-          int blue = colour.blue * brightness;
-          pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
-        }
-       
-        window.setPixelColour(i, j, pixel_colour);
-      }
-    }
+  if(triangle.shading == 'P'){
+    float u = rTI.u;
+    float v = rTI.v;
+    vec3 normal1 = rTI.intersectedTriangle.normals[0];
+    vec3 normal2 = rTI.intersectedTriangle.normals[1];
+    vec3 normal3 = rTI.intersectedTriangle.normals[2];
+    normal = normal1 + (u*(normal2 - normal1)) + (v*(normal3 - normal1));
   }
-  cout << "done." << endl;
-}
-
-uint32_t reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j){
-  vec3 Rr = calculateVectorOfReflection(intersectionOnMirror,Ri);
-  triangles = removeTriangle(intersectionOnMirror.intersectedTriangle, triangles);
-  RayTriangleIntersection intersection = getClosestIntersection(intersectionOnMirror.intersectionPoint,Rr,triangles);
-  triangles.push_back(intersectionOnMirror.intersectedTriangle);
-  uint32_t pixel_colour;
-
-  if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-    if (intersection.intersectedTriangle.reflect){
-      pixel_colour = reflectionColour(intersection,Rr,triangles,lightSource,i,j);
-      // pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
-    } else{
-      float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles);
-      Colour colour = intersection.intersectedTriangle.colour;
-      int red = colour.red * brightness;
-      int green = colour.green * brightness;
-      int blue = colour.blue * brightness;
-      pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
-    }
-  } else {
-    pixel_colour = (255<<24) + (0<<16) + (0<<8) + 0;
-  }
-  return pixel_colour;
-}
-
-vec3 calculateVectorOfReflection(RayTriangleIntersection intersection, vec3 Ri){
-  vec3 Rr = vec3(0,0,0);
-  ModelTriangle triangle = intersection.intersectedTriangle;
-  vec3 N =  normalize(cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]));
-  float dotProd = dot(Ri,N);
-  vec3 temp = scaleVector(N, 2*dotProd);
-  Rr = normalize(Ri - temp);
-  return Rr;
+  return normalize(normal);
 }
