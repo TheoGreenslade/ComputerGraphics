@@ -49,7 +49,8 @@ int main(int argc, char* argv[])
 {
   materials = readMaterials("cornell-box/cornell-box.mtl");
   initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
-  initialTriangles = initialiseMirrors(initialTriangles);
+  //initialTriangles = initialiseMirrors(initialTriangles);
+  initialTriangles = initialiseGlass (initialTriangles);
   initialTriangles = initialiseGravity(initialTriangles);
   triangles = initialTriangles;
   triangles = liftCubes(triangles);
@@ -57,6 +58,7 @@ int main(int argc, char* argv[])
   initialiseCORs(materials);
 
   sphere = readGeometrySphere("sphere.obj", 0.05);
+  sphere = initialiseGlass(sphere);
   logo = readGeometryLogo("logo/logo.obj", 0.01);
 
   SDL_Event event;
@@ -103,16 +105,6 @@ int main(int argc, char* argv[])
       //rasterise(window, sphere);
       char*** logoTexture = readPPMPayload("logo/texture.ppm");
       raytraceTextures(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo, logoTexture);
-      mode = 0;
-      window.renderFrame();
-    }else if (mode == 8){
-      vector<ModelTriangle> allTriangles;
-      // allTriangles.reserve(sphere.size() + triangles.size());
-      // allTriangles.insert(allTriangles.end(),sphere.begin(),sphere.end());
-      // allTriangles.insert(allTriangles.end(),triangles.begin(),triangles.end());
-      // sphere.insert(sphere.end(), triangles.begin(), triangles.end());
-      triangles.insert(triangles.end(),sphere.begin(),sphere.end());
-      raytraceMirrors(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, triangles);
       mode = 0;
       window.renderFrame();
     }

@@ -10,6 +10,7 @@ class ModelTriangle
     glm::vec2 texturePoints[3];
     Colour colour;
     char shading;
+    bool glass = false;
     bool reflect = false;
     bool fall = false;
     bool textured = false;

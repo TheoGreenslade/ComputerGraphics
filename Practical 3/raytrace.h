@@ -20,9 +20,10 @@ vec3 scaleVector(vec3 normal, float scaleFactor);
 bool inShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j);
 float calculateBrightnessScaler(RayTriangleIntersection intersection, vec3 shiftVector, vec3 step, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j, float stepScale, float maxShift);
 vec3 findNormal(RayTriangleIntersection rTI);
-void raytraceMirrors(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles);
 uint32_t reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j);
 vec3 calculateVectorOfReflection(RayTriangleIntersection intersection, vec3 Ri);
+uint32_t refractionColour(RayTriangleIntersection intersectionOnSurface, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j);
+vec3 calculateVectorOfRefraction(RayTriangleIntersection intersection, vec3 Ri);
 
 float ambientLight = 0.2;
 float specIntensity = 0.2;
@@ -43,8 +44,10 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
         uint32_t pixel_colour;
         if (intersection.intersectedTriangle.reflect){
           pixel_colour = reflectionColour(intersection,r,triangles,lightSource,i,j);
-          // pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
-        } else {
+        } else if (intersection.intersectedTriangle.glass){
+          pixel_colour = refractionColour(intersection,r,triangles,lightSource,i,j);
+        }
+        else {
           float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
           Colour colour = intersection.intersectedTriangle.colour;
           int red = colour.red * brightness;
@@ -317,37 +320,8 @@ vec3 findNormal(RayTriangleIntersection rTI){
   return normalize(normal);
 }
 
-void raytraceMirrors(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
-  cout << "Raytracing..." << endl;
-
-  for(int i = 0; i < WIDTH - 1; i++){
-    for(int j = 0; j < HEIGHT - 1; j++){
-      // cout << i << "," << j << endl;
-      vec3 temp = vec3(i-(WIDTH/2),(HEIGHT/2)-j, -distanceOfImagePlaneFromCamera);
-      vec3 r = normalize(temp * cameraRotation);
-      RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
-
-      if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-        uint32_t pixel_colour;
-
-        if (intersection.intersectedTriangle.reflect){
-          pixel_colour = reflectionColour(intersection,r,triangles,lightSource,i,j);
-          // pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
-        } else{
-          float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
-          Colour colour = intersection.intersectedTriangle.colour;
-          int red = colour.red * brightness;
-          int green = colour.green * brightness;
-          int blue = colour.blue * brightness;
-          pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
-        }
-
-        window.setPixelColour(i, j, pixel_colour);
-      }
-    }
-  }
-  cout << "done." << endl;
-}
+////////////////////////////////////////////////////////////////////////
+// Reflection Functions (MIRRORS)
 
 uint32_t reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j){
   vec3 Rr = calculateVectorOfReflection(intersectionOnMirror,Ri);
@@ -355,20 +329,20 @@ uint32_t reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri,
   RayTriangleIntersection intersection = getClosestIntersection(intersectionOnMirror.intersectionPoint,Rr,triangles);
   triangles.push_back(intersectionOnMirror.intersectedTriangle);
   uint32_t pixel_colour;
-
   if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-    // if (intersection.intersectedTriangle.reflect){
-    //   // pixel_colour = reflectionColour(intersection,Rr,triangles,lightSource,i,j);
-    //   pixel_colour = (255<<24) + (255<<16) + (0<<8) + 255;
-    // } else{
+      if (intersection.intersectedTriangle.reflect){
+         pixel_colour = reflectionColour(intersection,Rr,triangles,lightSource,i,j);
+      }else if (intersection.intersectedTriangle.glass){
+          pixel_colour = refractionColour(intersection,Rr,triangles,lightSource,i,j);
+      }else{
       float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles);
       Colour colour = intersection.intersectedTriangle.colour;
       int red = colour.red * brightness;
       int green = colour.green * brightness;
       int blue = colour.blue * brightness;
       pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
-    // }
-  } else {
+      }
+  }else{
     pixel_colour = (255<<24) + (0<<16) + (0<<8) + 0;
   }
   return pixel_colour;
@@ -382,4 +356,55 @@ vec3 calculateVectorOfReflection(RayTriangleIntersection intersection, vec3 Ri){
   vec3 temp = scaleVector(N, 2*dotProd);
   Rr = normalize(Ri - temp);
   return Rr;
+} 
+
+////////////////////////////////////////////////////////////////////////
+// Refraction Functions (GLASS)
+
+uint32_t refractionColour(RayTriangleIntersection intersectionOnSurface, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j){
+  vec3 Rr = calculateVectorOfRefraction(intersectionOnSurface,Ri);
+  triangles = removeTriangle(intersectionOnSurface.intersectedTriangle, triangles);
+  RayTriangleIntersection intersection = getClosestIntersection(intersectionOnSurface.intersectionPoint,Rr,triangles);
+  triangles.push_back(intersectionOnSurface.intersectedTriangle);
+  uint32_t pixel_colour;
+  if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
+      if (intersection.intersectedTriangle.reflect){
+         pixel_colour = reflectionColour(intersection,Rr,triangles,lightSource,i,j);
+      }
+      else if (intersection.intersectedTriangle.glass){
+         pixel_colour = refractionColour(intersection,Rr,triangles,lightSource,i,j);
+      }else{
+        float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles);
+        Colour colour = intersection.intersectedTriangle.colour;
+        int red = colour.red * brightness;
+        int green = colour.green * brightness;
+        int blue = colour.blue * brightness;
+        pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
+      }
+  } else {
+    pixel_colour = (255<<24) + (0<<16) + (0<<8) + 0;
+  }
+  return pixel_colour;
+}
+
+vec3 calculateVectorOfRefraction(RayTriangleIntersection intersection, vec3 I){
+  float ior = 1.5; // Glass
+  float ior2 = 1;  // Air
+  vec3 Ri = normalize(I);
+  vec3 normal = normalize(findNormal(intersection));
+  vec3 n;
+  float NdotI = dot(normal, Ri);
+  if(NdotI < 0){
+    // Outside surface 
+    NdotI = - NdotI;
+    n = normal;
+  }else{
+    // Inside surface
+    float iortemp = ior;
+    ior = ior2;
+    ior2 = iortemp;
+    n = -normal;
+  }
+  float eta = ior / ior2;
+  return eta * Ri - (eta * NdotI) * n;
 } 

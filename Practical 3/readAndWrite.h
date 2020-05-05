@@ -141,7 +141,7 @@ vector<ModelTriangle> readGeometrySphere(string filename, float  scalingFactor){
   vector<vec2> texturePoints;
 
   Colour newColour;
-  newColour.name = "red";
+  newColour.name = "Red";
   newColour.red = 255;
   newColour.green = 0;
   newColour.blue = 0;
