@@ -132,11 +132,15 @@ uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, char*
   vec2 texturePoint0 = intersection.intersectedTriangle.texturePoints[0];
   vec2 texturePoint1 = intersection.intersectedTriangle.texturePoints[1];
   vec2 texturePoint2 = intersection.intersectedTriangle.texturePoints[2];
+  //cout << texturePoint0.x << ", " << texturePoint0.y << " -- " << texturePoint1.x << ", " << texturePoint1.y << " -- " << texturePoint2.x << ", " << texturePoint2.y << endl;
   vec2 texturePixel = texturePoint0 + (intersection.u * (texturePoint1-texturePoint0)) + (intersection.v * (texturePoint2-texturePoint0));
 
   int red = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][0];
+  //cout << "does r" << endl;
   int green = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][1];
+    //cout << "does g" << endl;
   int blue = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][2];
+    //cout << "does b" << endl;
   if (red < 0){
     red = red + 255;
   }

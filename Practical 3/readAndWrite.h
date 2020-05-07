@@ -88,15 +88,15 @@ vector<ModelTriangle> readGeometry(string filename, vector<Colour> materials, fl
       pointString = pointString.substr(2);
 
       found = pointString.find(" ");
-      newPoint.x = stof(pointString.substr(0,found));
+      newPoint.x = stof(pointString.substr(0,found))*scalingFactor;
       pointString = pointString.substr(found+1);
 
       found = pointString.find(" ");
-      newPoint.y = stof(pointString.substr(0,found));
+      newPoint.y = stof(pointString.substr(0,found))*scalingFactor;
       pointString = pointString.substr(found+1);
 
       found = pointString.find(" ");
-      newPoint.z = stof(pointString.substr(0,found));
+      newPoint.z = stof(pointString.substr(0,found))*scalingFactor;
 
       points.push_back(newPoint);
       ifs.getline(point,256);

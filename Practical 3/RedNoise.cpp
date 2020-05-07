@@ -35,10 +35,10 @@ void handleEvent(SDL_Event event);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
-vec3 cameraPosition = vec3(0,3,3);
+vec3 cameraPosition = vec3(0,3,10);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
-vec3 lightSource = vec3(0, 4, -1.8);
-int mode = 2;
+vec3 lightSource = vec3(0, 0, 0);
+int mode = 1;
 vector<ModelTriangle> initialTriangles;
 vector<ModelTriangle> triangles;
 vector<Colour> materials;
@@ -48,19 +48,22 @@ vector<ModelTriangle> logo;
 int main(int argc, char* argv[])
 {
   materials = readMaterials("cornell-box/cornell-box.mtl");
-  initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 160.0);
+  initialTriangles = readGeometry("cornell-box/cornell-box.obj", materials, 2);
   initialTriangles = initialiseMirrors(initialTriangles);
   initialTriangles = initialiseGlass (initialTriangles);
-  initialTriangles = initialiseGravity(initialTriangles);
+  //initialTriangles = initialiseGravity(initialTriangles);
   triangles = initialTriangles;
   triangles = liftCubes(triangles);
   initialiseVelocities(materials);
   initialiseCORs(materials);
 
   sphere = readGeometrySphere("sphere.obj", 0.05);
-  sphere = initialiseGlass(sphere);
+  vector<vector<ModelTriangle>> planetsVector = initialisePlanets(sphere);
+  vector<ModelTriangle> planets = updatePlanets(planetsVector);
+  
   logo = readGeometryLogo("logo/logo.obj", 0.01);
-
+  
+  // int t = 1;
   SDL_Event event;
   while(true)
   {
@@ -70,35 +73,28 @@ int main(int argc, char* argv[])
     triangles = gravity(triangles, velocities,materials);
     vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
     visibleTriangles = clipTriangles(visibleTriangles,cameraPosition,cameraRotation,distanceOfImagePlaneFromCamera);
-    // cout << visibleTriangles.size() << endl;
     if(mode == 1){
-      wireframe(window, triangles);
+      wireframe(window, planets);
       window.renderFrame();
     }else if(mode == 2){
-      // rasterise(window, triangles);
-      rasterise(window, visibleTriangles);
+      planetsVector = updatePlanetPositions(planetsVector);
+      planets = updatePlanets(planetsVector);
+      wireframe(window, planets);
       window.renderFrame();
     }else if(mode == 3){
-      // cullTriangles(triangles, cameraPosition);
-      raytrace(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visibleTriangles);
-      mode = 0;
+      rasterise(window, planets);
       window.renderFrame();
     }else if(mode == 4){
-      raytraceAntiAlias(window, triangles, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
+      raytraceAntiAlias(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
       mode = 0;
       window.renderFrame();
     }else if(mode == 5){
       vector<ModelTriangle> plane = generatePlane(5, 5, -2, -5);
-      //vector<ModelTriangle> visibleTriangles = cullTriangles(plane, cameraPosition);
       raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane);
       mode = 0;
       window.renderFrame();
     }else if(mode == 6){
-      sphere.insert(sphere.end(), triangles.begin(), triangles.end());
-      // sphere.insert(sphere.end(), logo.begin(), logo.end());
-      vector<ModelTriangle> visible_sphere = cullTriangles(sphere,cameraPosition);
-      cout << sphere.size() << "," << visible_sphere.size() << endl;
-      raytrace(window, sphere, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visible_sphere);
+      raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, planets);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
@@ -122,10 +118,8 @@ void wireframe(DrawingWindow window, vector<ModelTriangle> triangles){
 void rasterise(DrawingWindow window, vector<ModelTriangle> triangles){
   int trianglessize = triangles.size();
   for(int i = 0; i < trianglessize; i++){
-  // for(int i = 20; i < 21; i++){
     CanvasTriangle temp =  projectTriangleOnImagePlane(triangles[i], cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
     drawFilledTri(window, temp);
-    // cout << triangles[i] << endl;
   }
 }
 
@@ -156,11 +150,6 @@ void orbit() {
   float newZ = sin(newAngle)*r;
   cameraPosition = vec3(newX,cameraPosition[1],newZ);
   lookat();
-  // update(vec3(1, 0, 0),  mat3(1,0,0,0,1,0,0,0,1));
-
-  // vec3 vec = vec3(cameraPosition/40, 0, 0);
-  // vec3 vec2 = cameraRotation*vec;
-  // update(vec3(length(vec2[0], vec2.y, vec2.z), mat3(1,0,0,0,1,0,0,0,1));
 }
 
 void handleEvent(SDL_Event event)

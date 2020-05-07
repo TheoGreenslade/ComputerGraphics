@@ -11,6 +11,7 @@ class ModelTriangle
     Colour colour;
     char shading;
     bool glass = false;
+    bool seethrough = false;
     bool reflect = false;
     bool fall = false;
     bool textured = false;

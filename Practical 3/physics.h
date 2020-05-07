@@ -16,6 +16,9 @@ void updateVelocities(vector<ModelTriangle> triangles, vector<Colour> materials)
 vector<ModelTriangle> liftCubes(vector<ModelTriangle> triangles);
 void initialiseCORs(vector<Colour> materials);
 vector<ModelTriangle> moveCubesAboveFloor(vector<ModelTriangle> triangles, vector<Colour> materials);
+vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>> planets);
+vec3 rotatePoint(vec3 point, int t);
+vector<ModelTriangle> updatePlanets(vector<vector<ModelTriangle>> planetsVector);
 
 vector<ModelTriangle> gravity(vector<ModelTriangle> triangles,vector<float> velocities, vector<Colour> materials) {
     int numOfTri = triangles.size();
@@ -155,3 +158,49 @@ vector<ModelTriangle> moveCubesAboveFloor(vector<ModelTriangle> triangles, vecto
     }
     return triangles;
 }
+
+vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>> planets){
+  // actual -> {-1,1,1.868,2.584,3.938,13.444,24.649,49.56,77.674} DOESNT LOOK GOOD 
+  vector<float> orbitSpeeds{-1,1,2,3,4,7,9,15,20}; 
+  vector<vector<ModelTriangle>> newPlanets;
+  int n = planets.size();
+  for(int i = 0; i < n; i++){
+    vector<ModelTriangle> planet = planets[i];
+    int ntri = planet.size();
+    for(int j = 0; j < ntri; j++){
+        for(int k = 0; k < 3; k++){
+            planet[j].vertices[k] = rotatePoint(planet[j].vertices[k], orbitSpeeds[i]);
+        }
+    }
+    newPlanets.push_back(planet);
+  }
+  return newPlanets;
+}
+
+vec3 rotatePoint(vec3 point, int velocity){
+    float theta = 0.5*velocity;
+    mat3 rotationMatrix = mat3(cos ( theta * PI / 180.0 ),0, sin ( theta * PI / 180.0 ),0,1,0, -(sin ( theta * PI / 180.0 )),0, cos ( theta * PI / 180.0 ));
+    vec3 newPoint = point * (rotationMatrix);
+    return newPoint;
+}
+
+vector<ModelTriangle> updatePlanets(vector<vector<ModelTriangle>> planetsVector){
+    vector<ModelTriangle> newPlanets;
+    int n = planetsVector.size();
+    for (int i = 0; i < n; i++){
+        newPlanets.insert(newPlanets.end(), planetsVector[i].begin(), planetsVector[i].end());
+    }
+    return newPlanets;
+}
+
+//vec3 translatePoint(vec3 point){
+ // float x = point[0];
+ // float z = point[2];
+ // float oldAngle = atan2(z, x);
+ // float newAngle = oldAngle + 0.1745;
+ // float r = sqrt((x*x) + (z*z));
+ // float newX = cos(newAngle)*r;
+ // float newZ = sin(newAngle)*r;
+ // cameraPosition = vec3(newX,cameraPosition[1],newZ);
+//}
+
