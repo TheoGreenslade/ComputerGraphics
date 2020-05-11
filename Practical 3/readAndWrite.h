@@ -429,3 +429,40 @@ void writePPMFile(DrawingWindow window){
   myfile.close();
   cout << "Saved to image.ppm" << endl;
 }
+
+PPMImage readPPMImage(string filename){
+  std::ifstream ifs;
+  ifs.open (filename, ifstream::in);
+
+  char encoding[256];
+  ifs.getline(encoding,256);
+
+  char comment[256];
+  ifs.getline(comment,256);
+
+  char dimensions[256];
+  ifs.getline(dimensions,256);
+  string dimensionsString(dimensions);
+  size_t found = dimensionsString.find(" ");
+  int width = stoi(dimensionsString.substr(0,found));
+  int height = stoi(dimensionsString.substr(found+1));
+
+  PPMImage image = PPMImage(height,width);
+
+  char maxColStr[256];
+  ifs.getline(maxColStr,256);
+
+  char*** payload;
+  payload = malloc3dArray(width,height,3);
+  for (int y = 0; y < height; y++){
+    for (int x = 0; x < width; x++){
+      ifs.get(payload[x][y][0]);
+      ifs.get(payload[x][y][1]);
+      ifs.get(payload[x][y][2]);
+      // cout << (float)payload[x][y][0] << "," << (float)payload[x][y][1] << "," << (float)payload[x][y][2] << endl;
+    }
+  }
+  image.payload = payload;
+
+  return image;
+}

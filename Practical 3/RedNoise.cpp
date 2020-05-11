@@ -9,6 +9,7 @@
 #include <math.h>
 #include <algorithm>
 #include <BoundingBox.h>
+#include <PPMImage.h>
 
 #include "projectTriangles.h"
 #include "readAndWrite.h"
@@ -62,6 +63,10 @@ int main(int argc, char* argv[])
   vector<ModelTriangle> planets = updatePlanets(planetsVector);
   
   logo = readGeometryLogo("logo/logo.obj", 0.01);
+
+  vector<PPMImage> textures;
+  PPMImage texture1 = readPPMImage("logo/texture.ppm");
+  textures.push_back(texture1);
   
   // int t = 1;
   SDL_Event event;
@@ -90,17 +95,15 @@ int main(int argc, char* argv[])
       window.renderFrame();
     }else if(mode == 5){
       vector<ModelTriangle> plane = generatePlane(5, 5, -2, -5);
-      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane);
+      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane, textures);
       mode = 0;
       window.renderFrame();
     }else if(mode == 6){
-      raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, planets);
+      raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, planets, textures);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
-      //rasterise(window, sphere);
-      char*** logoTexture = readPPMPayload("logo/texture.ppm");
-      raytraceTextures(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, vec3(0, 4, 3), logo, logoTexture);
+      raytrace(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, logo, textures);
       mode = 0;
       window.renderFrame();
     }

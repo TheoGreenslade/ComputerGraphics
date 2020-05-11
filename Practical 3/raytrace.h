@@ -5,7 +5,7 @@
 using namespace std;
 using namespace glm;
 
-void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles);
+void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles, vector<PPMImage> textures);
 RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vector<ModelTriangle> triangles);
 float proximityLighting(RayTriangleIntersection RayTriangleIntersection, vec3 lightSource);
 float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource);
@@ -25,13 +25,14 @@ vec3 reflectionColour(RayTriangleIntersection intersectionOnMirror, vec3 Ri, vec
 vec3 calculateVectorOfReflection(RayTriangleIntersection intersection, vec3 Ri);
 vec3 refractionColour(RayTriangleIntersection intersectionOnSurface, vec3 Ri, vector<ModelTriangle> triangles, vec3 lightSource, int i, int j);
 vec3 calculateVectorOfRefraction(RayTriangleIntersection intersection, vec3 Ri);
+vec3 getNormalFromBumpMap(RayTriangleIntersection intersection, vector<PPMImage> bumpMaps);
 
 float ambientLight = 0.15;
 float specIntensity = 0.2;
 int specPower = 10;
 
 // RAYTRACE FUNCTIONS //////////////////////////////////////////////////////////
-void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles){
+void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles, vector<PPMImage> textures){
   cout << "Raytracing..." << endl;
 
   for(int i = 0; i < WIDTH - 1; i++){
@@ -46,9 +47,14 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
         if (intersection.intersectedTriangle.reflect){
           vec3 colour = reflectionColour(intersection,r,triangles,lightSource,i,j);
           pixel_colour = (255<<24) + (std::min(int(colour.x), 255)<<16) + (std::min(int(colour.y), 255)<<8) + std::min(int(colour.z), 255);
-        }else if (intersection.intersectedTriangle.glass){
+        }
+        else if (intersection.intersectedTriangle.glass){
           vec3 colour = refractionColour(intersection,r,triangles,lightSource,i,j);
           pixel_colour = (255<<24) + (std::min(int(colour.x), 255)<<16) + (std::min(int(colour.y), 255)<<8) + std::min(int(colour.z), 255);
+        } 
+        else if (intersection.intersectedTriangle.textured){
+          float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
+          pixel_colour = calculateTexturePixelColour(intersection, textures, brightness);
         }
         else {
           float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
@@ -123,9 +129,10 @@ void raytraceTextures(DrawingWindow window, vector<ModelTriangle> triangles, vec
       RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
 
       if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
-        float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
-        uint32_t pixel_colour = calculateTexturePixelColour(intersection, texture, brightness);
-        window.setPixelColour(i, j, pixel_colour);
+        cout << "comment" << endl;
+        // float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
+        // uint32_t pixel_colour = calculateTexturePixelColour(intersection, texture, brightness);
+        // window.setPixelColour(i, j, pixel_colour);
       }
     }
   }
@@ -291,16 +298,6 @@ RayTriangleIntersection getClosestIntersection(vec3 cameraPosition, vec3 r, vect
 }
 
 vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles){
-  // bool remove = false;
-  // int index = 100000;
-  // for(int i = 0; i < (int) triangles.size(); i++){
-  //   if(triangles[i].vertices[0] == triangle.vertices[0] && triangles[i].vertices[1] == triangle.vertices[1] && triangles[i].vertices[2] == triangle.vertices[2]){
-  //     remove = true;
-  //     index = i;
-  //   }
-  // }
-  // if(remove) triangles.erase(triangles.begin()+index);
-  // return triangles;
   vector<ModelTriangle> newTriangles;
   for(int i = 0; i < (int) triangles.size(); i++){
     if(not(triangles[i].vertices[0] == triangle.vertices[0] && triangles[i].vertices[1] == triangle.vertices[1] && triangles[i].vertices[2] == triangle.vertices[2])){
@@ -414,3 +411,29 @@ vec3 calculateVectorOfRefraction(RayTriangleIntersection intersection, vec3 I){
   float eta = ior / ior2;
   return eta * Ri - (eta * NdotI) * n;
 } 
+
+vec3 getNormalFromBumpMap(RayTriangleIntersection intersection, vector<PPMImage> bumpMaps){
+  vec2 mapPoint0 = intersection.intersectedTriangle.bumpMapPoints[0];
+  vec2 mapPoint1 = intersection.intersectedTriangle.bumpMapPoints[1];
+  vec2 mapPoint2 = intersection.intersectedTriangle.bumpMapPoints[2];
+  vec2 mapPoint = mapPoint0 + (intersection.u * (mapPoint1-mapPoint0)) + (intersection.v * (mapPoint2-mapPoint0));
+
+  float mapX = bumpMaps[0].width*mapPoint.x;
+  float mapY = bumpMaps[0].height*mapPoint.y;
+
+  float x = (float)bumpMaps[0].payload[int(round(mapX))][int(round(mapY))][0];
+  float y = (float)bumpMaps[0].payload[int(round(mapX))][int(round(mapY))][1];
+  float z = (float)bumpMaps[0].payload[int(round(mapX))][int(round(mapY))][2];
+
+  vec3 normal = vec3(x,y,z);
+  
+
+  vec3 camDir = intersection.intersectionPoint - bumpMaps[0].cameraPosition;
+  if (dot(normal,camDir) < 0){
+    normal *= -1;
+  }
+
+  normal = normalize(normal);
+
+  return normal;
+}

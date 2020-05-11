@@ -8,6 +8,7 @@ class ModelTriangle
     glm::vec3 vertices[3];
     glm::vec3 normals[3];
     glm::vec2 texturePoints[3];
+    glm::vec2 bumpMapPoints[3];
     Colour colour;
     char shading;
     bool glass = false;
@@ -15,6 +16,7 @@ class ModelTriangle
     bool reflect = false;
     bool fall = false;
     bool textured = false;
+    int textureNum = 0;
 
     ModelTriangle()
     {
