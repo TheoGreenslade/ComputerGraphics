@@ -466,3 +466,31 @@ PPMImage readPPMImage(string filename){
 
   return image;
 }
+
+vector<PPMImage> readPlanetTextures(){
+  vector<PPMImage> textures;
+
+  PPMImage texture0 = readPPMImage("planetTextures/sun.ppm");
+  PPMImage texture1 = readPPMImage("planetTextures/mercury.ppm");
+  PPMImage texture2 = readPPMImage("planetTextures/venus.ppm");
+  PPMImage texture3 = readPPMImage("planetTextures/earth.ppm");
+  PPMImage texture4 = readPPMImage("planetTextures/mars.ppm");
+  PPMImage texture5 = readPPMImage("planetTextures/jupiter.ppm");
+  PPMImage texture6 = readPPMImage("planetTextures/saturn.ppm");
+  PPMImage texture7 = readPPMImage("planetTextures/uranus.ppm");
+  PPMImage texture8 = readPPMImage("planetTextures/venus.ppm");
+  PPMImage texture9 = readPPMImage("planetTextures/stars3.ppm");
+
+  textures.push_back(texture0);
+  textures.push_back(texture1);
+  textures.push_back(texture2);
+  textures.push_back(texture3);
+  textures.push_back(texture4);
+  textures.push_back(texture5);
+  textures.push_back(texture6);
+  textures.push_back(texture7);
+  textures.push_back(texture8);
+  textures.push_back(texture9);
+
+  return textures;
+}

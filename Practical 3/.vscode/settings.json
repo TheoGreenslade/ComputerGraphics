@@ -63,6 +63,7 @@
         "vector": "cpp",
         "filesystem": "cpp",
         "deque": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "bit": "cpp"
     }
 }

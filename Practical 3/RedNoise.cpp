@@ -65,8 +65,9 @@ int main(int argc, char* argv[])
   logo = readGeometryLogo("logo/logo.obj", 0.01);
 
   vector<PPMImage> textures;
-  PPMImage texture1 = readPPMImage("logo/texture.ppm");
-  textures.push_back(texture1);
+  textures = readPlanetTextures();
+
+  vector<ModelTriangle> stars = initialiseStars();
   
   // int t = 1;
   SDL_Event event;
@@ -75,11 +76,15 @@ int main(int argc, char* argv[])
     if(window.pollForInputEvents(&event)) handleEvent(event);
     initialiseDepth();
     initialiseWindow(window);
-    triangles = gravity(triangles, velocities,materials);
-    vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
-    visibleTriangles = clipTriangles(visibleTriangles,cameraPosition,cameraRotation,distanceOfImagePlaneFromCamera);
+    // triangles = gravity(triangles, velocities,materials);
+    // vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
+    // visibleTriangles = clipTriangles(visibleTriangles,cameraPosition,cameraRotation,distanceOfImagePlaneFromCamera);
+    vector<ModelTriangle> visiblePlanetTriangles = cullTriangles(planets, cameraPosition);
+    visiblePlanetTriangles = clipTriangles(visiblePlanetTriangles,cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
+    visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), stars.begin(), stars.end());
+
     if(mode == 1){
-      wireframe(window, planets);
+      wireframe(window, visiblePlanetTriangles);
       window.renderFrame();
     }else if(mode == 2){
       planetsVector = updatePlanetPositions(planetsVector);
@@ -90,7 +95,7 @@ int main(int argc, char* argv[])
       rasterise(window, planets);
       window.renderFrame();
     }else if(mode == 4){
-      raytraceAntiAlias(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource);
+      raytraceAntiAlias(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
       mode = 0;
       window.renderFrame();
     }else if(mode == 5){
@@ -99,11 +104,14 @@ int main(int argc, char* argv[])
       mode = 0;
       window.renderFrame();
     }else if(mode == 6){
-      raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, planets, textures);
+      raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
-      raytrace(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, logo, textures);
+      vector<PPMImage> logoTextures;
+      PPMImage logoTexture = readPPMImage("logo/texture.ppm");
+      logoTextures.push_back(logoTexture);
+      raytrace(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, logo, logoTextures);
       mode = 0;
       window.renderFrame();
     }

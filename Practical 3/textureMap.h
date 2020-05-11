@@ -9,7 +9,7 @@ void drawTextureTriangleFlatBottom(DrawingWindow window, CanvasTriangle triangle
 void drawTextureTriangleFlatTop(DrawingWindow window, CanvasTriangle triangle, string filename);
 void drawTextureTriangleFlatTop(DrawingWindow window, CanvasTriangle triangle, string filename);
 float* interpolate(float start, float end, int steps);
-uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, vector<PPMImage> textures, float brightness);
+vec3 calculateTexturePixelColour(RayTriangleIntersection intersection, vector<PPMImage> textures, float brightness);
 
 void drawTextureTriangle(DrawingWindow window, CanvasTriangle triangle, string filename){
   if (triangle.vertices[0].y > triangle.vertices[1].y){
@@ -128,19 +128,21 @@ float* interpolate(float start, float end, int steps){
   return result;
 }
 
-uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, vector<PPMImage> textures, float brightness){
+vec3 calculateTexturePixelColour(RayTriangleIntersection intersection, vector<PPMImage> textures, float brightness){
   vec2 texturePoint0 = intersection.intersectedTriangle.texturePoints[0];
   vec2 texturePoint1 = intersection.intersectedTriangle.texturePoints[1];
   vec2 texturePoint2 = intersection.intersectedTriangle.texturePoints[2];
   //cout << texturePoint0.x << ", " << texturePoint0.y << " -- " << texturePoint1.x << ", " << texturePoint1.y << " -- " << texturePoint2.x << ", " << texturePoint2.y << endl;
   vec2 texturePixel = texturePoint0 + (intersection.u * (texturePoint1-texturePoint0)) + (intersection.v * (texturePoint2-texturePoint0));
 
+  int textureX = int(round((textures[intersection.intersectedTriangle.textureNum].width - 1)*texturePixel.x));
+  int textureY = int(round((textures[intersection.intersectedTriangle.textureNum].height - 1)*texturePixel.y));
   char *** texture = textures[intersection.intersectedTriangle.textureNum].payload;
-  int red = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][0];
+  int red = (int)texture[textureX][textureY][0];
   //cout << "does r" << endl;
-  int green = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][1];
+  int green = (int)texture[textureX][textureY][1];
     //cout << "does g" << endl;
-  int blue = (int)texture[int(round(299*texturePixel.x))][int(round(299*texturePixel.y))][2];
+  int blue = (int)texture[textureX][textureY][2];
     //cout << "does b" << endl;
   if (red < 0){
     red = red + 255;
@@ -154,6 +156,7 @@ uint32_t calculateTexturePixelColour(RayTriangleIntersection intersection, vecto
   red = red * brightness;
   green = green * brightness;
   blue = blue * brightness;
-  uint32_t pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
-  return pixel_colour;
+  // uint32_t pixel_colour = (255<<24) + (std::min(red, 255)<<16) + (std::min(green, 255)<<8) + std::min(blue, 255);
+  vec3 colour = vec3(red,green,blue);
+  return colour;
 }

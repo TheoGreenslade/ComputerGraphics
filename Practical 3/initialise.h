@@ -9,6 +9,8 @@ vector<ModelTriangle> initialiseGravity (vector<ModelTriangle> triangles);
 vector<vector<ModelTriangle>> initialisePlanets(vector<ModelTriangle> sphere);
 vector<ModelTriangle> initialiseScaleAndPosition(vector<ModelTriangle> triangles, float scale, vec3 position);
 vector<ModelTriangle> makeSeeThrough(vector<ModelTriangle> object);
+vector<ModelTriangle> makeTextured(vector<ModelTriangle> object, int textureNumber);
+vector<ModelTriangle> initialiseStars();
 
 vector<ModelTriangle> initialiseMirrors (vector<ModelTriangle> triangles){
   int NumOfTri = triangles.size();
@@ -54,31 +56,41 @@ vector<vector<ModelTriangle>> initialisePlanets(vector<ModelTriangle> sphere){
   vector<vector<ModelTriangle>> planets;
   vector<ModelTriangle> sun = initialiseScaleAndPosition(sphere, 5, vec3(0,0,0));
   sun = makeSeeThrough(sun);
+  sun = makeTextured(sun,0);
   planets.push_back(sun);
   
   vector<ModelTriangle> mercury = initialiseScaleAndPosition(sphere, 0.5, vec3(7,0,0));
+  mercury = makeTextured(mercury,1);
   planets.push_back(mercury);
   
   vector<ModelTriangle> venus = initialiseScaleAndPosition(sphere, 1, vec3(10,0,0));
+  venus = makeTextured(venus,2);
   planets.push_back(venus);
   
   vector<ModelTriangle> earth = initialiseScaleAndPosition(sphere, 1, vec3(13,0,0));
+  earth = makeTextured(earth,3);
   planets.push_back(earth);
   
   vector<ModelTriangle> mars = initialiseScaleAndPosition(sphere, 0.4, vec3(15,0,0));
+  mars = makeTextured(mars,4);
   planets.push_back(mars);
   
   vector<ModelTriangle> jupiter = initialiseScaleAndPosition(sphere, 2, vec3(19,0,0));
+  jupiter = makeTextured(jupiter,5);
   planets.push_back(jupiter);
   
   vector<ModelTriangle> saturn = initialiseScaleAndPosition(sphere, 1.5, vec3(24,0,0));
+  saturn = makeTextured(saturn, 6);
   planets.push_back(saturn);
   
   vector<ModelTriangle> uranus = initialiseScaleAndPosition(sphere, 1, vec3(28,0,0));
+  uranus = makeTextured(uranus,7);
   planets.push_back(uranus);
   
   vector<ModelTriangle> neptune = initialiseScaleAndPosition(sphere, 1, vec3(31,0,0));
+  neptune = makeTextured(neptune,8);
   planets.push_back(neptune);
+
   return planets;
 }
 
@@ -106,4 +118,48 @@ vector<ModelTriangle> makeSeeThrough(vector<ModelTriangle> object){
   return newTriangles;
 }
 
+vector<ModelTriangle> makeTextured(vector<ModelTriangle> object, int textureNumber){
+  vector<ModelTriangle> newTriangles;
+  int n = object.size();
+  for(int i = 0; i < n; i++){
+    ModelTriangle newTriangle = object[i];
+    newTriangle.textured = true;
+    newTriangle.textureNum = textureNumber;
+    newTriangles.push_back(newTriangle);
+    }
+  return newTriangles;
+}
 
+vector<ModelTriangle> initialiseStars(){
+  Colour colour = Colour(255,0,255);
+  float z = -10;
+  float x = 40;
+  float y = 40;
+  vec3 topLeft = vec3(-x,y,z);
+  vec3 bottomLeft = vec3(-x,-y,z);
+  vec3 topRight = vec3(x,y,z);
+  vec3 bottomRight = vec3(x,-y,z);
+
+  ModelTriangle stars1 = ModelTriangle(topLeft,bottomLeft,topRight, colour);
+  stars1.shading = 'N';
+  stars1.seethrough = true;
+  stars1.textured = true;
+  stars1.textureNum = 9;
+  stars1.texturePoints[0] = vec2(0,0);
+  stars1.texturePoints[1] = vec2(0,1);
+  stars1.texturePoints[2] = vec2(1,0);
+
+  ModelTriangle stars2 = ModelTriangle(bottomRight,topRight,bottomLeft, colour);
+  stars2.shading = 'N';
+  stars2.seethrough = true;
+  stars2.textured = true;
+  stars2.textureNum = 9;
+  stars2.texturePoints[0] = vec2(1,1);
+  stars2.texturePoints[1] = vec2(1,0);
+  stars2.texturePoints[2] = vec2(0,1);
+
+  vector<ModelTriangle> stars;
+  stars.push_back(stars1);
+  stars.push_back(stars2);
+  return stars;
+}

@@ -11,7 +11,7 @@ float proximityLighting(RayTriangleIntersection RayTriangleIntersection, vec3 li
 float angleOfIncidence(RayTriangleIntersection rTI, vec3 lightSource);
 bool inHardShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelTriangle> triangles, int i, int j);
 vector<ModelTriangle> removeTriangle(ModelTriangle triangle, vector<ModelTriangle> triangles);
-void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource);
+void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource,vector<ModelTriangle> visibleTriangles, vector<PPMImage> textures);
 float SpecularHighlight(RayTriangleIntersection rTI, vec3 lightSource, vec3 r, int shineLevel);
 void raytraceTextures(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource, vector<ModelTriangle> visibleTriangles, char*** texture);
 float calcualteBrightness(RayTriangleIntersection intersection, vec3 lightSource, vec3 r, int i, int j,vector<ModelTriangle> triangles);
@@ -54,7 +54,8 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
         } 
         else if (intersection.intersectedTriangle.textured){
           float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
-          pixel_colour = calculateTexturePixelColour(intersection, textures, brightness);
+          vec3 colour = calculateTexturePixelColour(intersection, textures, brightness);
+          pixel_colour = (255<<24) + (std::min((int)colour[0], 255)<<16) + (std::min((int)colour[1], 255)<<8) + std::min((int)colour[2], 255);
         }
         else {
           float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
@@ -71,26 +72,33 @@ void raytrace(DrawingWindow window, vector<ModelTriangle> triangles, vec3 camera
   cout << "done." << endl;
 }
 
-void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource){
+void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, vec3 cameraPosition, mat3x3 cameraRotation, float distanceOfImagePlaneFromCamera, vec3 lightSource,vector<ModelTriangle> visibleTriangles, vector<PPMImage> textures){
   cout << "Raytracing (Anti-Alias)..." << endl;
 
   for(int i = 0; i < WIDTH - 1; i++){
     for(int j = 0; j < HEIGHT - 1; j++){
+      cout << i << "," << j << endl;
 
       vec3 rayColour = vec3(0,0,0);
 
-      for(int x = 0; x < 4; x++){
-        for(int y = 0; y < 4; y++){
-          float AAshiftTempX = ((x*2)-3);
-          float AAshiftX = AAshiftTempX/8;
-          float AAshiftTempY = ((y*2)-3);
-          float AAshiftY = AAshiftTempY/8;
+      for(int x = 0; x < 2; x++){
+        for(int y = 0; y < 2; y++){
+          // float AAshiftTempX = ((x*2)-3);
+          // float AAshiftX = AAshiftTempX/8;
+          // float AAshiftTempY = ((y*2)-3);
+          // float AAshiftY = AAshiftTempY/8;
+          // float tempX = i-(WIDTH/2) + AAshiftX;
+          // float tempY = (HEIGHT/2)-j + AAshiftY;
+          float AAshiftTempX = ((x*2)-1);
+          float AAshiftX = AAshiftTempX/4;
+          float AAshiftTempY = ((y*2)-1);
+          float AAshiftY = AAshiftTempY/4;
           float tempX = i-(WIDTH/2) + AAshiftX;
           float tempY = (HEIGHT/2)-j + AAshiftY;
 
           vec3 temp = vec3(tempX,tempY, -distanceOfImagePlaneFromCamera);
           vec3 r = normalize(temp * cameraRotation);
-          RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,triangles);
+          RayTriangleIntersection intersection = getClosestIntersection(cameraPosition,r,visibleTriangles);
 
           if(intersection.distanceFromCamera != std::numeric_limits<float>::infinity()){
             if (intersection.intersectedTriangle.reflect){
@@ -98,6 +106,10 @@ void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, ve
               rayColour = rayColour + rayColourNew;
             }else if (intersection.intersectedTriangle.glass){
               vec3 rayColourNew = refractionColour(intersection,r,triangles,lightSource,i,j);
+              rayColour = rayColour + rayColourNew;
+            }else if (intersection.intersectedTriangle.textured){
+              float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
+              vec3 rayColourNew = calculateTexturePixelColour(intersection, textures, brightness);
               rayColour = rayColour + rayColourNew;
             }else {
               float brightness =  calcualteBrightness(intersection,lightSource,r,i,j,triangles);
@@ -111,7 +123,7 @@ void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, ve
           }
         }
       }
-      vec3 scale = vec3(16,16,16);
+      vec3 scale = vec3(4,4,4);
       rayColour = rayColour / scale;
       uint32_t pixel_colour = (255<<24) + (int(rayColour.x)<<16) + (int(rayColour.y)<<8) + int(rayColour.z);
       window.setPixelColour(i, j, pixel_colour);
@@ -241,7 +253,7 @@ bool inGlassShaddow(RayTriangleIntersection rTI, vec3 lightSource, vector<ModelT
 
 float calcualteBrightness(RayTriangleIntersection intersection, vec3 lightSource, vec3 r, int i, int j,vector<ModelTriangle> triangles){
   if(intersection.intersectedTriangle.seethrough){
-    return 100;
+    return 1;
   }
   float b = proximityLighting(intersection, lightSource);
   float a = angleOfIncidence(intersection, lightSource);
