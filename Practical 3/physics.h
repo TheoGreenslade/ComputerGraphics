@@ -161,7 +161,7 @@ vector<ModelTriangle> moveCubesAboveFloor(vector<ModelTriangle> triangles, vecto
 
 vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>> planets){
   // actual -> {-1,1,1.868,2.584,3.938,13.444,24.649,49.56,77.674} DOESNT LOOK GOOD 
-  vector<float> orbitSpeeds{-1,2.2,2.7,3.1,3.8,7.4,9,12,15}; 
+  vector<float> orbitSpeeds{-1,2.2,2.7,3.1,3.8,7.4,8.5,9.5,11}; 
   vector<vector<ModelTriangle>> newPlanets;
   int n = planets.size();
   for(int i = 0; i < n; i++){
