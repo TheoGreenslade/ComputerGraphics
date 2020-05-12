@@ -78,7 +78,6 @@ int main(int argc, char* argv[])
 
   vector<PPMImage> textures;
   textures = readPlanetTextures();
-
   vector<ModelTriangle> stars = initialiseStars();
   
   lookat();
@@ -93,12 +92,12 @@ int main(int argc, char* argv[])
     visiblePlanetTriangles = clipTriangles(visiblePlanetTriangles,cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
     visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), stars.begin(), stars.end());
     visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), logo.begin(), logo.end());
-    
-    
     if(mode == 1){
       // RESET POSITIONS
       planetsVector = planetsVectorInitial;
       planets = updatePlanets(planetsVector);
+      planets.insert(planets.end(), stars.begin(), stars.end());
+    planets.insert(planets.end(), logo.begin(), logo.end());
       cameraPosition = startingPosition;
       lookat();
       t=0;
@@ -110,6 +109,8 @@ int main(int argc, char* argv[])
       else mode = 0;
       planetsVector = updatePlanetPositions(planetsVector);
       planets = updatePlanets(planetsVector);
+      planets.insert(planets.end(), stars.begin(), stars.end());
+      planets.insert(planets.end(), logo.begin(), logo.end());
       wireframe(window, visiblePlanetTriangles);
       window.renderFrame();
       //writePPMFile(window, t);
@@ -120,6 +121,8 @@ int main(int argc, char* argv[])
       else mode = 0;
       planetsVector = updatePlanetPositions(planetsVector);
       planets = updatePlanets(planetsVector);
+      planets.insert(planets.end(), stars.begin(), stars.end());
+      planets.insert(planets.end(), logo.begin(), logo.end());
       rasterise(window, visiblePlanetTriangles);
       window.renderFrame();
       writePPMFile(window, t);
@@ -130,6 +133,8 @@ int main(int argc, char* argv[])
       else mode = 0;
       planetsVector = updatePlanetPositions(planetsVector);
       planets = updatePlanets(planetsVector);
+      planets.insert(planets.end(), stars.begin(), stars.end());
+      planets.insert(planets.end(), logo.begin(), logo.end());
       raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
       window.renderFrame();
       writePPMFile(window, t);
@@ -140,6 +145,8 @@ int main(int argc, char* argv[])
       else mode = 0;
       planetsVector = updatePlanetPositions(planetsVector);
       planets = updatePlanets(planetsVector);
+      planets.insert(planets.end(), stars.begin(), stars.end());
+      planets.insert(planets.end(), logo.begin(), logo.end());
       raytraceAntiAlias(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
       window.renderFrame();
       writePPMFile(window, t);
@@ -154,7 +161,16 @@ int main(int argc, char* argv[])
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
-      
+      // FREE MOVEMENT
+      wireframe(window, visiblePlanetTriangles);
+      window.renderFrame();
+    }else if(mode == 8){
+      // RAYTRACE FREE MOVEMENT
+      planets.insert(planets.end(), stars.begin(), stars.end());
+      planets.insert(planets.end(), logo.begin(), logo.end());
+      raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
+      window.renderFrame();
+      mode = 0;
     }
   }
 }

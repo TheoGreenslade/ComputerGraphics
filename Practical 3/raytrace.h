@@ -27,7 +27,7 @@ vec3 refractionColour(RayTriangleIntersection intersectionOnSurface, vec3 Ri, ve
 vec3 calculateVectorOfRefraction(RayTriangleIntersection intersection, vec3 Ri);
 vec3 getNormalFromBumpMap(RayTriangleIntersection intersection, vector<PPMImage> bumpMaps);
 
-float ambientLight = 0.15;
+float ambientLight = 0.2;
 float specIntensity = 0.2;
 int specPower = 10;
 
