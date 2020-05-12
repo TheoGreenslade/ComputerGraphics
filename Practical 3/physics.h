@@ -170,6 +170,7 @@ vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>
     for(int j = 0; j < ntri; j++){
         for(int k = 0; k < 3; k++){
             planet[j].vertices[k] = rotatePoint(planet[j].vertices[k], orbitSpeeds[i]);
+            planet[j].normals[k]  = rotatePoint(planet[j].normals[k], orbitSpeeds[i]);
         }
     }
     newPlanets.push_back(planet);
@@ -192,15 +193,4 @@ vector<ModelTriangle> updatePlanets(vector<vector<ModelTriangle>> planetsVector)
     }
     return newPlanets;
 }
-
-//vec3 translatePoint(vec3 point){
- // float x = point[0];
- // float z = point[2];
- // float oldAngle = atan2(z, x);
- // float newAngle = oldAngle + 0.1745;
- // float r = sqrt((x*x) + (z*z));
- // float newX = cos(newAngle)*r;
- // float newZ = sin(newAngle)*r;
- // cameraPosition = vec3(newX,cameraPosition[1],newZ);
-//}
 

@@ -43,7 +43,7 @@ vector<ModelTriangle> initialiseGlass (vector<ModelTriangle> triangles){
   vector<ModelTriangle> newTriangles;
   for (int i = 0; i <NumOfTri; i++){
     ModelTriangle triangle = triangles[i];
-    if (triangle.colour.name == "Red"){
+    if (triangle.colour.name == "Glass"){
       triangle.glass = true;
     }
     newTriangles.push_back(triangle);
@@ -59,37 +59,37 @@ vector<vector<ModelTriangle>> initialisePlanets(vector<ModelTriangle> sphere){
   sun = makeTextured(sun,0);
   planets.push_back(sun);
   
-  vector<ModelTriangle> mercury = initialiseScaleAndPosition(sphere, 0.5, vec3(7,0,0));
-  mercury = makeTextured(mercury,1);
-  planets.push_back(mercury);
+  //vector<ModelTriangle> mercury = initialiseScaleAndPosition(sphere, 2, vec3(7,0,0));
+  //mercury = makeTextured(mercury,1);
+  //planets.push_back(mercury);
   
-  vector<ModelTriangle> venus = initialiseScaleAndPosition(sphere, 1, vec3(10,0,0));
-  venus = makeTextured(venus,2);
-  planets.push_back(venus);
+  //vector<ModelTriangle> venus = initialiseScaleAndPosition(sphere, 1, vec3(10,0,0));
+  //venus = makeTextured(venus,2);
+  //planets.push_back(venus);
   
-  vector<ModelTriangle> earth = initialiseScaleAndPosition(sphere, 1, vec3(13,0,0));
-  earth = makeTextured(earth,3);
-  planets.push_back(earth);
+  //vector<ModelTriangle> earth = initialiseScaleAndPosition(sphere, 1, vec3(13,0,0));
+  //earth = makeTextured(earth,3);
+  //planets.push_back(earth);
   
-  vector<ModelTriangle> mars = initialiseScaleAndPosition(sphere, 0.4, vec3(15,0,0));
-  mars = makeTextured(mars,4);
-  planets.push_back(mars);
+  //vector<ModelTriangle> mars = initialiseScaleAndPosition(sphere, 0.4, vec3(15,0,0));
+  //mars = makeTextured(mars,4);
+  //planets.push_back(mars);
   
-  vector<ModelTriangle> jupiter = initialiseScaleAndPosition(sphere, 2, vec3(19,0,0));
-  jupiter = makeTextured(jupiter,5);
-  planets.push_back(jupiter);
+  //vector<ModelTriangle> jupiter = initialiseScaleAndPosition(sphere, 2, vec3(19,0,0));
+  //jupiter = makeTextured(jupiter,5);
+  //planets.push_back(jupiter);
   
-  vector<ModelTriangle> saturn = initialiseScaleAndPosition(sphere, 1.5, vec3(24,0,0));
-  saturn = makeTextured(saturn, 6);
-  planets.push_back(saturn);
+  //vector<ModelTriangle> saturn = initialiseScaleAndPosition(sphere, 1.5, vec3(24,0,0));
+  //saturn = makeTextured(saturn, 6);
+  //planets.push_back(saturn);
   
-  vector<ModelTriangle> uranus = initialiseScaleAndPosition(sphere, 1, vec3(28,0,0));
-  uranus = makeTextured(uranus,7);
-  planets.push_back(uranus);
+  //vector<ModelTriangle> uranus = initialiseScaleAndPosition(sphere, 1, vec3(28,0,0));
+  //uranus = makeTextured(uranus,7);
+  //planets.push_back(uranus);
   
-  vector<ModelTriangle> neptune = initialiseScaleAndPosition(sphere, 1, vec3(31,0,0));
-  neptune = makeTextured(neptune,8);
-  planets.push_back(neptune);
+  //vector<ModelTriangle> neptune = initialiseScaleAndPosition(sphere, 1, vec3(31,0,0));
+  //neptune = makeTextured(neptune,8);
+  //planets.push_back(neptune);
 
   return planets;
 }

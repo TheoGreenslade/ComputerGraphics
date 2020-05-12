@@ -38,6 +38,7 @@ void drawLine(DrawingWindow window, CanvasPoint start, CanvasPoint end, Colour c
   float xDiff = end.x - start.x;
   float yDiff = end.y - start.y;
   float numberOfSteps = std::max(abs(xDiff),abs(yDiff));
+  if(numberOfSteps > WIDTH + HEIGHT) return;
   float xStepSize = xDiff/numberOfSteps;
   float yStepSize = yDiff/numberOfSteps;
 

@@ -268,9 +268,9 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
   vector<vec2> texturePoints;
 
   Colour newColour;
-  newColour.name = "red";
-  newColour.red = 255;
-  newColour.green = 0;
+  newColour.name = "Glass";
+  newColour.red = 0;
+  newColour.green = 255;
   newColour.blue = 0;
 
   while(!ifs.eof( )){
@@ -343,7 +343,7 @@ vector<ModelTriangle> readGeometryLogo(string filename, float  scalingFactor){
       index = stoi(faceString.substr(0,found));
       newTriangle.texturePoints[2] = texturePoints[index -1];
       newTriangle.shading = 'N';
-      newTriangle.textured = true;
+      newTriangle.textured = false;
       ModelTriangles.push_back(newTriangle);
     }
   }

@@ -22,6 +22,8 @@
 #include "clipping.h"
 #include "initialise.h"
 
+// ffmpeg -framerate 5 -i %03d.ppm -c:v mpeg4 -q 5 out.mp4
+
 using namespace std;
 using namespace glm;
 
@@ -33,13 +35,19 @@ void update(vec3 cameraTransform, mat3x3 cameraRotationTransform);
 void wireframe(DrawingWindow window, vector<ModelTriangle> triangles);
 void rasterise(DrawingWindow window, vector<ModelTriangle> triangles);
 void handleEvent(SDL_Event event);
+void lookat();
+void cameraShot(int t, vec3 startTransform, vec3 endTransform);
+void handleEvent(SDL_Event event);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
-vec3 cameraPosition = vec3(0,3,10);
+vec3 cameraPosition = vec3(-10,-10,30);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
+vec3 startingPosition;
+mat3x3 startingRotation;
 vec3 lightSource = vec3(0, 0, 0);
 int mode = 1;
+int t = 0;
 vector<ModelTriangle> initialTriangles;
 vector<ModelTriangle> triangles;
 vector<Colour> materials;
@@ -62,35 +70,43 @@ int main(int argc, char* argv[])
   vector<vector<ModelTriangle>> planetsVector = initialisePlanets(sphere);
   vector<ModelTriangle> planets = updatePlanets(planetsVector);
   
-  logo = readGeometryLogo("logo/logo.obj", 0.01);
+  logo = readGeometryLogo("logo/logo.obj", 0.005);
+  logo = initialiseScaleAndPosition(logo, 1, vec3(0.5,1.5,7));
+  logo = initialiseGlass(logo);
 
   vector<PPMImage> textures;
   textures = readPlanetTextures();
 
   vector<ModelTriangle> stars = initialiseStars();
   
-  // int t = 1;
+  lookat();
+  
   SDL_Event event;
   while(true)
   {
     if(window.pollForInputEvents(&event)) handleEvent(event);
     initialiseDepth();
     initialiseWindow(window);
-    // triangles = gravity(triangles, velocities,materials);
-    // vector<ModelTriangle> visibleTriangles = cullTriangles(triangles, cameraPosition);
-    // visibleTriangles = clipTriangles(visibleTriangles,cameraPosition,cameraRotation,distanceOfImagePlaneFromCamera);
     vector<ModelTriangle> visiblePlanetTriangles = cullTriangles(planets, cameraPosition);
     visiblePlanetTriangles = clipTriangles(visiblePlanetTriangles,cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
-    visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), stars.begin(), stars.end());
+    //visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), stars.begin(), stars.end());
+    visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), logo.begin(), logo.end());
 
     if(mode == 1){
+      t=0;
+      startingPosition = cameraPosition;
+      startingRotation = cameraRotation;
       wireframe(window, visiblePlanetTriangles);
       window.renderFrame();
     }else if(mode == 2){
+      if(t < 240) cameraShot(t, startingPosition, vec3(5,6,6));
+      else mode = 0;
       planetsVector = updatePlanetPositions(planetsVector);
       planets = updatePlanets(planetsVector);
-      wireframe(window, planets);
+      wireframe(window, visiblePlanetTriangles);
       window.renderFrame();
+      //writePPMFile(window, t);
+      t++;
     }else if(mode == 3){
       rasterise(window, planets);
       window.renderFrame();
@@ -161,6 +177,13 @@ void orbit() {
   float newZ = sin(newAngle)*r;
   cameraPosition = vec3(newX,cameraPosition[1],newZ);
   lookat();
+}
+
+void cameraShot(int t, vec3 startTransform, vec3 endTransform){
+  vec3 tDiff   = startTransform - endTransform;
+  vec3 tStep   = tDiff * vec3(0.004166, 0.004166, 0.004166);
+  lookat();
+  update(-tStep, mat3(1,0,0,0,1,0,0,0,1));
 }
 
 void handleEvent(SDL_Event event)
