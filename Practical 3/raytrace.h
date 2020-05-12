@@ -1,5 +1,5 @@
-#define WIDTH 600
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 480
 #define PI 3.14159265
 
 using namespace std;
@@ -76,8 +76,8 @@ void raytraceAntiAlias(DrawingWindow window, vector<ModelTriangle> triangles, ve
   cout << "Raytracing (Anti-Alias)..." << endl;
 
   for(int i = 0; i < WIDTH - 1; i++){
+    cout << i << endl;
     for(int j = 0; j < HEIGHT - 1; j++){
-      cout << i << "," << j << endl;
 
       vec3 rayColour = vec3(0,0,0);
 
@@ -397,11 +397,11 @@ vec3 refractionColour(RayTriangleIntersection intersectionOnSurface, vec3 Ri, ve
          colourfinal = refractionColour(intersection,Rr,triangles,lightSource,i,j, textures);
       }
       else if (intersection.intersectedTriangle.textured){
-         float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles);
+         float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles)*0.6;
          colourfinal = calculateTexturePixelColour(intersection, textures, brightness);
       }
       else{
-        float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles);
+        float brightness =  calcualteBrightness(intersection,lightSource,Rr,i,j,triangles)*0.6;
         Colour colour = intersection.intersectedTriangle.colour;
         colourfinal = vec3(colour.red * brightness, colour.green * brightness, colour.blue * brightness);
       }

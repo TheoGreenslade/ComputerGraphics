@@ -1,5 +1,5 @@
-#define WIDTH 600
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 480
 
 using namespace std;
 using namespace glm;
@@ -17,7 +17,7 @@ vector<ModelTriangle> liftCubes(vector<ModelTriangle> triangles);
 void initialiseCORs(vector<Colour> materials);
 vector<ModelTriangle> moveCubesAboveFloor(vector<ModelTriangle> triangles, vector<Colour> materials);
 vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>> planets);
-vec3 rotatePoint(vec3 point, int t);
+vec3 rotatePoint(vec3 point, float t);
 vector<ModelTriangle> updatePlanets(vector<vector<ModelTriangle>> planetsVector);
 
 vector<ModelTriangle> gravity(vector<ModelTriangle> triangles,vector<float> velocities, vector<Colour> materials) {
@@ -161,7 +161,7 @@ vector<ModelTriangle> moveCubesAboveFloor(vector<ModelTriangle> triangles, vecto
 
 vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>> planets){
   // actual -> {-1,1,1.868,2.584,3.938,13.444,24.649,49.56,77.674} DOESNT LOOK GOOD 
-  vector<float> orbitSpeeds{-1,1,2,3,4,7,9,15,20}; 
+  vector<float> orbitSpeeds{-1,2.2,2.7,3.1,3.8,7.4,9,12,15}; 
   vector<vector<ModelTriangle>> newPlanets;
   int n = planets.size();
   for(int i = 0; i < n; i++){
@@ -178,7 +178,7 @@ vector<vector<ModelTriangle>> updatePlanetPositions(vector<vector<ModelTriangle>
   return newPlanets;
 }
 
-vec3 rotatePoint(vec3 point, int velocity){
+vec3 rotatePoint(vec3 point, float velocity){
     float theta = 0.5*velocity;
     mat3 rotationMatrix = mat3(cos ( theta * PI / 180.0 ),0, sin ( theta * PI / 180.0 ),0,1,0, -(sin ( theta * PI / 180.0 )),0, cos ( theta * PI / 180.0 ));
     vec3 newPoint = point * (rotationMatrix);

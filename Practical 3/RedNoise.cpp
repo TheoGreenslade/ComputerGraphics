@@ -27,8 +27,8 @@
 using namespace std;
 using namespace glm;
 
-#define WIDTH 600
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 480
 #define PI 3.14159265
 
 void update(vec3 cameraTransform, mat3x3 cameraRotationTransform);
@@ -43,8 +43,8 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float distanceOfImagePlaneFromCamera = WIDTH/2;
 vec3 cameraPosition = vec3(-10,-10,30);
 mat3x3 cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
-vec3 startingPosition;
-mat3x3 startingRotation;
+vec3 startingPosition = cameraPosition;
+mat3x3 startingRotation = cameraRotation;
 vec3 lightSource = vec3(0, 0, 0);
 int mode = 1;
 int t = 0;
@@ -68,6 +68,8 @@ int main(int argc, char* argv[])
 
   sphere = readGeometrySphere("sphere.obj", 0.05);
   vector<vector<ModelTriangle>> planetsVector = initialisePlanets(sphere);
+  for(int i = 0; i<280; i++) planetsVector = updatePlanetPositions(planetsVector);
+  vector<vector<ModelTriangle>> planetsVectorInitial = planetsVector;
   vector<ModelTriangle> planets = updatePlanets(planetsVector);
   
   logo = readGeometryLogo("logo/logo.obj", 0.005);
@@ -89,16 +91,21 @@ int main(int argc, char* argv[])
     initialiseWindow(window);
     vector<ModelTriangle> visiblePlanetTriangles = cullTriangles(planets, cameraPosition);
     visiblePlanetTriangles = clipTriangles(visiblePlanetTriangles,cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera);
-    //visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), stars.begin(), stars.end());
+    visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), stars.begin(), stars.end());
     visiblePlanetTriangles.insert(visiblePlanetTriangles.end(), logo.begin(), logo.end());
-
+    
+    
     if(mode == 1){
+      // RESET POSITIONS
+      planetsVector = planetsVectorInitial;
+      planets = updatePlanets(planetsVector);
+      cameraPosition = startingPosition;
+      lookat();
       t=0;
-      startingPosition = cameraPosition;
-      startingRotation = cameraRotation;
       wireframe(window, visiblePlanetTriangles);
       window.renderFrame();
     }else if(mode == 2){
+      // RUNTHROUGH WIREFRAME
       if(t < 240) cameraShot(t, startingPosition, vec3(5,6,6));
       else mode = 0;
       planetsVector = updatePlanetPositions(planetsVector);
@@ -108,28 +115,46 @@ int main(int argc, char* argv[])
       //writePPMFile(window, t);
       t++;
     }else if(mode == 3){
-      rasterise(window, planets);
+      // RUNTHROUGH RASTERISE
+      if(t < 240) cameraShot(t, startingPosition, vec3(5,6,6));
+      else mode = 0;
+      planetsVector = updatePlanetPositions(planetsVector);
+      planets = updatePlanets(planetsVector);
+      rasterise(window, visiblePlanetTriangles);
       window.renderFrame();
+      writePPMFile(window, t);
+      t++;
     }else if(mode == 4){
-      raytraceAntiAlias(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
-      mode = 0;
-      window.renderFrame();
-    }else if(mode == 5){
-      vector<ModelTriangle> plane = generatePlane(5, 5, -2, -5);
-      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, plane, textures);
-      mode = 0;
-      window.renderFrame();
-    }else if(mode == 6){
+      // RUNTHROUGH RAYTRACE
+      if(t < 240) cameraShot(t, startingPosition, vec3(5,6,6));
+      else mode = 0;
+      planetsVector = updatePlanetPositions(planetsVector);
+      planets = updatePlanets(planetsVector);
       raytrace(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
+      window.renderFrame();
+      writePPMFile(window, t);
+      t++;
+    }else if(mode == 5){
+      // RUNTHROUGH RAYTRACE ANTI ALIAS
+      if(t < 240) cameraShot(t, startingPosition, vec3(5,6,6));
+      else mode = 0;
+      planetsVector = updatePlanetPositions(planetsVector);
+      planets = updatePlanets(planetsVector);
+      raytraceAntiAlias(window, planets, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, visiblePlanetTriangles, textures);
+      window.renderFrame();
+      writePPMFile(window, t);
+      t++;
+    }else if(mode == 6){
+      // GENERATIVE GEOMETRY PLANE
+      vec3 planeLightSource = vec3(0, 5, 0);
+      cameraPosition = vec3(0,6,4);
+      lookat();
+      vector<ModelTriangle> plane = generatePlane(5, 5, -2, -5);
+      raytrace(window, plane, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, planeLightSource, plane, textures);
       mode = 0;
       window.renderFrame();
     }else if(mode == 7){
-      vector<PPMImage> logoTextures;
-      PPMImage logoTexture = readPPMImage("logo/texture.ppm");
-      logoTextures.push_back(logoTexture);
-      raytrace(window, logo, cameraPosition, cameraRotation, distanceOfImagePlaneFromCamera, lightSource, logo, logoTextures);
-      mode = 0;
-      window.renderFrame();
+      
     }
   }
 }
@@ -203,12 +228,6 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_d)     update(vec3(0, 0, 0),  mat3(cos ( theta * PI / 180.0 ),0, sin ( theta * PI / 180.0 ),0,1,0, -(sin ( theta * PI / 180.0 )),0, cos ( theta * PI / 180.0 )));
     else if(event.key.keysym.sym == SDLK_a)     update(vec3(0, 0, 0),  mat3(cos ( (-theta) * PI / 180.0 ),0, sin ( (-theta) * PI / 180.0 ),0,1,0, -(sin ( (-theta) * PI / 180.0 )),0, cos ( (-theta) * PI / 180.0 )));
 
-    else if(event.key.keysym.sym == SDLK_r){
-      cameraPosition = vec3(0,3,3);
-      cameraRotation = mat3(1,0,0,0,1,0,0,0,1);
-      triangles = initialTriangles;
-    }
-
     else if(event.key.keysym.sym == SDLK_g){
       triangles = liftCubes(triangles);
       initialiseVelocities(materials);
@@ -226,7 +245,6 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_7) mode = 7;
     else if(event.key.keysym.sym == SDLK_8) mode = 8;
 
-    else if(event.key.keysym.sym == SDLK_p) writePPMFile(window);
 
   }
   else if(event.type == SDL_MOUSEBUTTONDOWN){

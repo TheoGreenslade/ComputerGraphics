@@ -1,5 +1,5 @@
-#define WIDTH 600
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 480
 
 using namespace std;
 using namespace glm;
@@ -395,9 +395,12 @@ char ***malloc3dArray(int dim1, int dim2, int dim3){
     return array;
 }
 
-void writePPMFile(DrawingWindow window){
+void writePPMFile(DrawingWindow window, int t){
+  string a = std::to_string(t);
+  int length = a.size();
+  string output = std::string( 3 - length, '0').append(a);
   ofstream myfile;
-  myfile.open ("image.ppm");
+  myfile.open ("output/" + output + ".ppm");
   myfile << "P6\n";
   myfile << "# output from renderer\n";
   myfile << WIDTH << " " << HEIGHT << "\n";
@@ -405,17 +408,6 @@ void writePPMFile(DrawingWindow window){
 
   for (int y = 0; y < HEIGHT; y++){
     for (int x = 0; x < WIDTH; x++){
-      // uint32_t colour = window.getPixelColour(x,y);
-      // // cout << colour << endl;
-      // std::string binaryColour = std::bitset<32>(colour).to_string();
-      // int add = 0;
-
-      // char red = static_cast<char>(std::stoi(binaryColour.substr(8,8),0,2)+add);
-      // char green = static_cast<char>(std::stoi(binaryColour.substr(16,8),0,2)+add);
-      // char blue = static_cast<char>(std::stoi(binaryColour.substr(24),0,2)+add);
-      // // cout << binaryColour << endl << binaryColour.substr(8,8) << endl << binaryColour.substr(16,8) << endl << binaryColour.substr(24) << endl;
-      // myfile << red << green << blue;
-
       uint32_t colour = window.getPixelColour(x,y);
       uint32_t red = (colour >> 16) & 0xff;
       uint32_t green = (colour >> 8) & 0xff;
@@ -427,7 +419,6 @@ void writePPMFile(DrawingWindow window){
     }
   }
   myfile.close();
-  cout << "Saved to image.ppm" << endl;
 }
 
 PPMImage readPPMImage(string filename){

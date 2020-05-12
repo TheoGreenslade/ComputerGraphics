@@ -1,5 +1,5 @@
-#define WIDTH 600
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 480
 
 using namespace std;
 using namespace glm;
